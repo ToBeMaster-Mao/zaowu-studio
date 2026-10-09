@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">造物</title>
+  <desc id="desc">两道交错折带形成字母 Z，代表将想法折叠成形。</desc>
+  <path d="M8 7H55L61 19L40 36L29 28L44 17H2L8 7Z" fill="#D3F28A"/>
+  <path d="M24 28L35 36L20 48H62L56 58H9L3 46L24 28Z" fill="#D3F28A"/>
+  <path d="M55 7L61 19L50 18L44 17L55 7Z" fill="#EDFCCB"/>
+  <path d="M3 46L9 58L20 48L14 47L3 46Z" fill="#9EC65B"/>
+</svg>

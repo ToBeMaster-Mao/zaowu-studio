@@ -1,0 +1,48 @@
+# Dependencies and local tool state
+node_modules/
+.codex/
+.agents/
+studio-skill/.validation-deps/
+.cache/
+
+# Private project data, conversations, references, credentials and exports
+.studio/
+.env
+.env.*
+!.env.example
+auth.json
+/reference.png
+/reference-airliner.glb
+exports/
+
+# Tests and generated compatibility previews may contain project metadata
+**/test-output/
+**/revision-previews/
+coverage/
+playwright-report/
+test-results/
+*.log
+*.log.*
+
+# Build outputs; reproduce the skill ZIP with npm run pack:skill
+public-downloads/*.zip
+dist/
+build/
+*.tgz
+/inline-preview.html
+
+# Design explorations, screenshots and temporary artifacts are not source assets
+/design/
+/generated_images/
+/screenshots/
+/tmp/
+/temp/
+*.tmp
+*.bak
+
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/

@@ -1,0 +1,22 @@
+{
+  "name": "zaowu-studio",
+  "version": "0.1.0",
+  "description": "Local Three.js modeling workspace connected to Codex CLI",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "prestart": "node scripts/pack-skill.mjs",
+    "start": "node studio-server/server.mjs",
+    "studio": "npm start",
+    "check": "node scripts/check.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "test:ui": "node studio-server/task-ui-fixture.mjs",
+    "smoke:http": "node studio-server/http-smoke.mjs",
+    "pack:skill": "node scripts/pack-skill.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}

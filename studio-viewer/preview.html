@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Model Studio · 三维视口</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif}
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#16191d}
+    #viewport{position:absolute;inset:0;outline:none}canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+    #notice{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;color:#a2abb8;font-size:12px;gap:14px;padding:30px;line-height:1.7}
+    #notice[hidden]{display:none}.spinner{height:24px;width:24px;border:2px solid #343b43;border-top-color:#c4eb7b;border-radius:50%;margin:auto;animation:spin .85s linear infinite}
+    #notice.error{background:#16191def;color:#efb4a6}#notice.error .spinner{display:none}#notice-text{max-width:460px;overflow-wrap:anywhere}
+    .hint{position:absolute;bottom:20px;left:24px;color:#66717d;font-size: 11px;letter-spacing:.08em;pointer-events:none;user-select:none}
+    @keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+  </style>
+  <style>
+.orientation-control {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 118px;
+  color: #9ca69e;
+  background: #1d2326ed;
+  border: 1px solid #ffffff0d;
+  border-radius: 15px;
+  box-shadow: 0 5px 18px #00000014, inset 0 1px #ffffff03;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 5;
+}
+.orientation-heading {
+  height: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 5px 0 12px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #96a19b;
+}
+.orientation-control button {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.orientation-control button:focus-visible { outline: 2px solid #d1eb9b; outline-offset: 2px; }
+.orientation-reset {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  width: 30px;
+  border-radius: 8px;
+  background: transparent;
+  color: #9da99f;
+}
+.orientation-reset:hover { color: #d1eb9b; background: #d1eb9b0d; }
+.orientation-reset svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.orientation-compass { position: relative; width: 116px; height: 106px; }
+.orientation-lines { position: absolute; inset: 0; width: 116px; height: 106px; pointer-events: none; }
+.orientation-orbit { fill: none; stroke: #92a69e13; stroke-width: 1; }
+.orientation-origin { fill: #a3b1a8; }
+.orientation-ray { stroke: var(--axis-color); stroke-width: 1.2; }
+.axis-x { --axis-color: #d99895; --axis-fill: #413234; }
+.axis-y { --axis-color: #b2cd8f; --axis-fill: #343e2d; }
+.axis-z { --axis-color: #8cadd8; --axis-fill: #2d3848; }
+.orientation-axis {
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border-radius: 50%;
+  color: var(--axis-color);
+}
+.orientation-axis span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: var(--axis-fill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  box-shadow: 0 2px 6px #0000001a;
+  transition: filter .12s, box-shadow .12s;
+}
+.orientation-axis.is-negative span { width: 22px; height: 22px; font-size: 11px; background: #222a2b; }
+.orientation-axis.is-back { opacity: .66; }
+.orientation-axis:hover { opacity: 1; z-index: 30 !important; }
+.orientation-axis:hover span { filter: brightness(1.3); box-shadow: 0 0 0 3px #d1eb9b12; }
+.orientation-axis.is-aligned span { box-shadow: 0 0 0 3px #d1eb9b1b; }
+.orientation-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 0 7px 7px;
+}
+.orientation-shortcuts button {
+  min-width: 30px;
+  height: 29px;
+  border-radius: 6px;
+  background: #ffffff03;
+  color: #8f9b94;
+  font-size: 11px;
+}
+.orientation-shortcuts button:hover, .orientation-shortcuts button.active { background: #d1eb9b12; color: #d1eb9b; }
+@media (max-width: 520px) {
+  .orientation-control { top: 12px; right: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orientation-axis span { transition: none; }
+}
+
+  </style>
+  <script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head>
+<body>
+  <div id="viewport" aria-label="可旋转、缩放并点选部件的三维模型视口"></div>
+  <div id="notice" role="status"><div class="spinner"></div><div id="notice-text">正在载入三维模型…</div></div>
+  <div class="hint">拖动旋转 · 滚轮缩放 · 点击选择部件</div>
+  <script type="module" src="/studio-viewer/viewport.js"></script>
+</body>
+</html>

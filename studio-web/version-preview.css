@@ -1,0 +1,271 @@
+/* Historical models are visibly separate from the editable current version. */
+.stage.is-version-preview {
+  --version-preview-bottom: 151px;
+}
+
+.version-preview-banner {
+  position: absolute;
+  z-index: 3;
+  top: 54px;
+  left: 18px;
+  right: 18px;
+  min-width: 0;
+  height: 85px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid #d3f28a2b;
+  border-radius: 9px;
+  background: #21281ff5;
+  box-shadow: 0 5px 20px #00000015;
+}
+
+.version-preview-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.version-preview-copy small {
+  color: #b7cb9b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.version-preview-copy strong {
+  display: block;
+  overflow: hidden;
+  color: #e0e8d7;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.version-preview-copy span {
+  overflow: hidden;
+  color: #95a18c;
+  font-size: 12px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#returnCurrentButton {
+  flex: none;
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid #d3f28a33;
+  border-radius: 6px;
+  background: #d3f28a0c;
+  color: #d3e4bc;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+#returnCurrentButton:hover:not(:disabled) {
+  background: #d3f28a1a;
+  border-color: #d3f28a55;
+  color: #e8f4d8;
+}
+
+.stage.is-version-preview .viewport-mount {
+  top: var(--version-preview-bottom);
+}
+
+.stage.is-version-preview .geometry-stats {
+  top: calc(var(--version-preview-bottom) + 10px);
+}
+
+.stage.is-version-preview .stage-note {
+  top: calc(var(--version-preview-bottom) + 8px);
+}
+
+#rightPanel #versionStatusNote {
+  margin-top: 10px;
+  color: #9ba991;
+  font-size: 12px;
+  line-height: 1.7;
+}
+#rightPanel #versionStatusNote:empty { display: none; }
+
+#rightPanel #versions {
+  padding-bottom: 8px;
+}
+
+#rightPanel #versions .version-card {
+  margin: 0 14px 10px;
+  padding: 13px;
+  border-color: #ffffff0e;
+  background: #ffffff01;
+  border-radius: 8px;
+}
+
+#rightPanel #versions .version-card.is-head {
+  background: #d3f28a04;
+  border-color: #d3f28a22;
+}
+
+#rightPanel #versions .version-card.is-previewing {
+  background: #d3f28a0a;
+  border-color: #d3f28a59;
+  box-shadow: inset 3px 0 0 #d3f28ab3;
+}
+
+#rightPanel #versions .version-top {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-bottom: 8px;
+}
+
+#rightPanel #versions .version-dot {
+  flex: none;
+  margin-top: 6px;
+}
+
+#rightPanel #versions .version-card.is-previewing .version-dot {
+  background: var(--lime);
+}
+
+#rightPanel #versions .version-card strong {
+  min-width: 0;
+  flex: 1 1 140px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ced7e1;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+#rightPanel #versions .version-card.is-previewing strong {
+  color: #e2edcf;
+}
+
+#rightPanel #versions .version-number {
+  color: #8896a5;
+  font-size: 11px;
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.65;
+  white-space: nowrap;
+}
+
+#rightPanel #versions .version-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-left: auto;
+}
+
+#rightPanel #versions .version-badges .current-label,
+#rightPanel #versions .version-badges .preview-label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 2px 5px;
+  border: 1px solid #ffffff0b;
+  border-radius: 4px;
+  color: #a3b497;
+  background: #ffffff03;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+#rightPanel #versions .version-badges .preview-label {
+  color: #d7ebba;
+  border-color: #d3f28a24;
+  background: #d3f28a0a;
+}
+
+#rightPanel #versions .version-card time {
+  margin: 0 0 11px;
+  color: #8391a0;
+  font-size: 11px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+#rightPanel #versions .version-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+#rightPanel #versions .version-actions > button {
+  min-height: 33px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid #ffffff13;
+  border-radius: 5px;
+  color: #a0adba;
+  background: #ffffff02;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+#rightPanel #versions .version-actions > .version-preview-button {
+  color: #d3dfc4;
+  background: #d3f28a0a;
+  border-color: #d3f28a28;
+}
+
+#rightPanel #versions .version-actions > .version-preview-button:hover:not(:disabled) {
+  color: #e3f1cf;
+  background: #d3f28a18;
+  border-color: #d3f28a45;
+}
+
+#rightPanel #versions .version-actions > button:disabled {
+  opacity: 1;
+  color: #677482;
+  border-color: #ffffff08;
+  background: #ffffff01;
+}
+
+#rightPanel .history-readonly-note {
+  margin: 14px 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #d3f28a1c;
+  border-radius: 7px;
+  background: #d3f28a05;
+  color: #abb9a0;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+@media (max-width: 1190px) {
+  .stage.is-version-preview { --version-preview-bottom: 185px; }
+  .version-preview-banner {
+    left: 14px;
+    right: 14px;
+    height: 119px;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 8px;
+    padding: 11px 12px;
+  }
+  .version-preview-copy { flex-basis: 100%; }
+  #returnCurrentButton { min-height: 30px; padding: 5px 10px; font-size: 12px; }
+}
+
+@media (min-width: 850px) and (max-width: 980px) {
+  /* Keep the return action reachable beside the overlaid inspector drawer. */
+  .app.right-open .version-preview-banner { right: 332px; }
+}
+
+@media (max-width: 690px) {
+  .version-preview-banner { top: 48px; left: 12px; right: 12px; }
+  .stage.is-version-preview { --version-preview-bottom: 179px; }
+  .version-preview-copy strong { font-size: 12px; }
+}

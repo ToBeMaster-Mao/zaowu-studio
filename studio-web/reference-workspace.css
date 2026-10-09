@@ -1,0 +1,46 @@
+.brand-mark { display: block; flex: none; object-fit: contain; }
+.reference-dropzone { position: relative; border: 1px solid #ffffff10; border-radius: 10px; background: #151a1e; padding: 8px; outline-offset: 3px; }
+.reference-dropzone.is-dragover { border-color: #d3f28a; background: #252e20; }
+.reference-dropzone .reference-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; max-height: 184px; overflow-y: auto; margin: 0; scrollbar-width: thin; }
+.reference-dropzone .reference-card { position: relative; width: 100%; height: 88px; min-height: 0; border-radius: 7px; overflow: hidden; margin: 0; background: #171c20; }
+.reference-dropzone .reference-card img { object-fit: contain; width: 100%; height: 100%; opacity: .72; transition: opacity .15s; }
+.reference-dropzone .reference-card.is-selected { border: 1px solid #d3f28a90; }
+.reference-dropzone .reference-card.is-selected img { opacity: 1; }
+.reference-dropzone .ref-label { display: none; }
+.reference-dropzone .reference-check { top: 4px; left: 4px; padding: 2px 4px; font-size: 11px; border-radius: 3px; }
+.reference-dropzone .ref-remove { top: 3px; right: 3px; width: 19px; height: 19px; font-size: 12px; background: #14191fe8; }
+.reference-dropzone .upload-empty { grid-column: 1 / -1; min-height: 110px; border: 0; background: transparent; padding: 13px 5px; }
+.reference-dropzone .upload-empty strong { color: #c2d99d; font-size: 25px; }
+.reference-dropzone .upload-empty span { font-size: 12px; color: #b4c0cc; }
+.reference-dropzone .upload-empty small { font-size: 12px; color: #708091; }
+.reference-upload-tile { min-height: 88px; border: 1px dashed #ffffff22; border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #afbea2; font-size: 12px; }
+.reference-upload-tile span { font-size: 22px; line-height: 1; }
+.reference-upload-tile:hover { background: #d3f28a08; border-color: #d3f28a66; }
+.reference-drop-hint { color: #8995a0; font-size: 11px; text-align: center; line-height: 1.6; margin: 8px 0 0; }
+.reference-drop-overlay { display: none; position: absolute; inset: 0; z-index: 2; place-items: center; background: #232f1deb; border-radius: inherit; color: #d3f28a; font-size: 13px; pointer-events: none; }
+.reference-dropzone.is-dragover .reference-drop-overlay { display: grid; }
+.reference-selection-toolbar { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 12px; color: #8d9d89; }
+.reference-selection-toolbar span { flex: 1; }
+.reference-selection-toolbar button { font-size: 12px; padding: 3px 0; }
+.conversation-attachment-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 10px; }
+#attachImagesButton { padding: 7px 8px; font-size: 12px; color: #c9dcb3; background: #d3f28a08; border: 1px solid #d3f28a20; border-radius: 6px; white-space: nowrap; }
+#conversationImageCount { margin-left: auto; font-size: 11px; line-height: 1.5; color: #98a394; }
+.include-reference-label { display: flex; align-items: center; gap: 6px; color: #8e9caa; font-size: 12px; margin: 0 0 10px; line-height: 1.5; }
+.include-reference-label input { accent-color: #cbe88b; width: 12px; height: 12px; }
+.message-image-group { margin-top: 10px; }
+.message-image-group-label { color: #a9b69f; font-size: 12px; margin-bottom: 6px; line-height: 1.5; }
+.message-image-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; }
+.message-image-grid button { display: block; height: 66px; padding: 0; border: 1px solid #ffffff14; border-radius: 6px; overflow: hidden; background: #171c21; }
+.message-image-grid img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.message-image-grid button:hover { border-color: #d3f28a88; }
+.attachment-preview-dialog { width: min(860px,calc(100vw - 32px)); max-height: 90vh; padding: 20px; }
+.attachment-preview-dialog .modal-header { margin-bottom: 12px; }
+.attachment-preview-dialog h2 { font-size: 14px; overflow-wrap: anywhere; }
+.attachment-preview-dialog > img { display: block; width: 100%; max-height: calc(90vh - 92px); object-fit: contain; background: #14191d; border-radius: 8px; }
+.left-panel:has(#conversationImageGroups:not([hidden])) { overflow-y: auto; scrollbar-width: thin; }
+.left-panel .composer:has(#conversationImageGroups:not([hidden])) { flex: none; }
+.left-panel:has(#conversationImageGroups:not([hidden])) .messages { min-height: 100px; flex: 1 0 100px; }
+@media (max-height: 820px) { .reference-dropzone .reference-list { max-height: 150px; } .reference-dropzone .reference-card, .reference-upload-tile { height: 65px; min-height: 65px; } }
+.composer .conversation-image-label { font-size: 12px; }
+.conversation-image-count { font-size: 11px; }
+.conversation-image-upload-status { font-size: 12px; }

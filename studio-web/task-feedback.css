@@ -1,0 +1,190 @@
+/* Local modeling actions and task feedback share the inspector's quiet lime accent. */
+.left-panel .panel-heading { margin-bottom: 17px; }
+.left-panel .reference-section { min-width: 0; }
+
+
+.reference-card.is-selected { border-color: #bcd78170; }
+.reference-choice { display: block; width: 100%; height: 100%; cursor: pointer; }
+.reference-choice input { position: absolute; left: 10px; top: 10px; opacity: 0; }
+.reference-choice:focus-within { outline: 2px solid #d3f28a; outline-offset: -3px; }
+.reference-check { position: absolute; top: 7px; left: 7px; padding: 3px 6px; border-radius: 4px; background: #151b1ee6; color: #c9dcaa; font-size: 12px; }
+.reference-choice input:disabled ~ .reference-check { opacity: .65; }
+.reference-list { max-height: 176px; overflow-y: auto; scrollbar-width: thin; }
+.reference-list .reference-card { flex-shrink: 0; }
+#overlayApprovalButton { margin-top: 16px; padding: 10px 14px; color: #d3f28a; }
+#taskNotice [hidden], #newMessagesButton[hidden], .creation-overlay button[hidden] { display: none !important; }
+.task-card-bottom:has(#taskCardStop[hidden]) { min-height: 0; }
+.task-card[data-tone="neutral"] .task-card-bottom,
+.task-card[data-tone="success"] .task-card-bottom { display: none; }
+.generate-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 12px;
+  margin-top: 11px;
+  border: 1px solid #d3f28a;
+  border-radius: 9px;
+  background: var(--lime, #d3f28a);
+  color: #253216;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: 0 3px 10px #00000010;
+}
+.generate-button:hover:not(:disabled) { background: #e0f6ac; border-color: #e0f6ac; }
+.generate-button:disabled {
+  background: #30372a;
+  border-color: #414936;
+  color: #8f9c7c;
+  opacity: 1;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.reference-hint {
+  min-height: 0;
+  margin-top: 7px;
+  color: #8b959f;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.reference-hint:empty { display: none; }
+.left-panel .chat-heading { margin-top: 17px; margin-bottom: 10px; }
+.left-panel .messages { min-height: 65px; padding-bottom: 2px; }
+.left-panel .message { margin-bottom: 17px; }
+.message.live { border-left: 2px solid #d3f28a55; padding-left: 10px; }
+.message.live .message-head { color: #c8d8af; }
+.message.live .message-body:empty::after { content: '正在思考…'; color: #9ea893; }
+.typing-dots { display: inline-flex; align-items: center; gap: 3px; height: 12px; margin-left: 2px; }
+.typing-dots span {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #bfdc8c;
+  animation: task-typing 1.4s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: .18s; }
+.typing-dots span:nth-child(3) { animation-delay: .36s; }
+#newMessagesButton {
+  align-self: center;
+  flex: none;
+  margin: 2px 0 8px;
+  padding: 6px 12px;
+  border: 1px solid #d3f28a35;
+  border-radius: 20px;
+  background: #30372a;
+  color: #d3e4ba;
+  font-size: 12px;
+  box-shadow: 0 4px 14px #00000025;
+}
+#newMessagesButton:hover { background: #3b4431; }
+#taskNotice {
+  display: block;
+  flex: none;
+  margin: 5px 0 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+  color: inherit;
+}
+.task-card {
+  --task-accent: #aab6a0;
+  padding: 11px 12px 10px;
+  border: 1px solid #ffffff12;
+  border-radius: 10px;
+  background: #22272a;
+}
+.task-card[data-tone="active"] { --task-accent: #d3f28a; border-color: #d3f28a2b; background: #252b23; }
+.task-card[data-tone="success"] { --task-accent: #c1dda0; border-color: #c1dda025; }
+.task-card[data-tone="warning"] { --task-accent: #e4c383; border-color: #e4c38330; background: #2b2922; }
+.task-card[data-tone="error"] { --task-accent: #e5a99b; border-color: #e5a99b30; background: #2c2424; }
+.task-card-top { display: flex; align-items: center; gap: 7px; min-height: 17px; }
+.task-state-dot {
+  display: block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--task-accent);
+}
+.task-card[data-tone="active"] .task-state-dot { animation: task-breathe 1.8s ease-in-out infinite; }
+#taskTitle { color: var(--task-accent); font-size: 13px; font-weight: 550; line-height: 1.5; }
+#taskElapsed {
+  margin-left: auto;
+  color: #abb3a4;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#taskDescription { margin-top: 7px; color: #b7c0b9; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.task-steps { display: flex; gap: 6px; margin-top: 10px; }
+.task-steps > span {
+  flex: 1;
+  min-width: 0;
+  padding-top: 5px;
+  border-top: 2px solid #ffffff10;
+  color: #838c80;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.task-steps > span.active { border-color: var(--task-accent); color: var(--task-accent); }
+.task-steps > span.done { border-color: #a5c47d72; color: #a4b395; }
+.task-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 9px; min-height: 20px; }
+#taskActivity { color: #899486; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+#taskCardStop {
+  flex: none;
+  padding: 4px 8px;
+  border: 1px solid #d3f28a2b;
+  border-radius: 5px;
+  color: #c5d7ac;
+  font-size: 12px;
+  line-height: 1.4;
+}
+#taskCardStop:hover:not(:disabled) { background: #d3f28a12; }
+#taskCardStop:disabled, .left-panel .stop-button:disabled {
+  opacity: 1;
+  color: #87917e;
+  border-color: #ffffff12;
+  background: #ffffff03;
+  cursor: not-allowed;
+}
+.composer-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  color: #c3cacd;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.composer-label span { color: #84909a; font-size: 12px; font-weight: 400; }
+.left-panel .composer { margin-top: 0; padding: 10px 11px 9px; }
+.left-panel .composer textarea { min-height: 66px; font-size: 14px; line-height: 1.8; }
+.left-panel .composer textarea:disabled { color: #828d95; cursor: not-allowed; }
+.left-panel .send-button:disabled { background: #424b36; color: #94a17e; opacity: 1; }
+.left-panel .approval-panel { max-height: 180px; overflow: auto; scrollbar-width: thin; }
+@media (max-height: 820px) {
+  .left-panel { overflow-y: auto; scrollbar-width: thin; }
+  .left-panel .messages { min-height: 110px; flex: 1 0 110px; }
+  .left-panel .reference-card { height: 112px; }
+  .left-panel .panel-heading { margin-bottom: 12px; }
+  .left-panel .chat-heading { margin-top: 12px; }
+  .left-panel .composer textarea { min-height: 48px; }
+  #taskDescription { font-size: 13px; }
+  .task-card { padding-top: 9px; padding-bottom: 8px; }
+}
+@media (max-height: 680px) {
+  .left-panel { overflow-y: auto; }
+  .left-panel .messages { min-height: 110px; flex: 1 0 110px; }
+  .left-panel .reference-card { height: 86px; }
+}
+@keyframes task-breathe { 50% { opacity: .45; box-shadow: 0 0 0 4px #d3f28a0c; } }
+@keyframes task-typing { 0%, 60%, 100% { opacity: .4; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .typing-dots span, .task-card[data-tone="active"] .task-state-dot { animation: none; }
+}

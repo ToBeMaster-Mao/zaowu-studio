@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="studio-token" content="__SESSION_TOKEN__">
+  <meta name="color-scheme" content="dark">
+  <title>造物 Studio</title>
+  <link rel="stylesheet" href="/studio-web/styles.css">
+  <link rel="stylesheet" href="/studio-web/inspector.css">
+  <link rel="stylesheet" href="/studio-web/task-feedback.css">
+  <link rel="stylesheet" href="/studio-web/creation-particles.css">
+  <link rel="stylesheet" href="/studio-web/version-preview.css">
+  <link rel="stylesheet" href="/studio-web/conversation-images.css">
+  <link rel="stylesheet" href="/studio-web/reference-workspace.css">
+  <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="造物 Studio 首页"><img class="brand-mark" src="/studio-web/brand/logo-mark.svg" width="32" height="32" alt=""><strong>造物<span>Studio</span></strong></a>
+      <span class="header-divider"></span>
+      <div class="project-control"><select id="projectSelect" aria-label="当前项目"><option>正在载入项目…</option></select><button id="newProject" class="icon-button" title="新建项目" aria-label="新建项目">＋</button><button id="projectInfoButton" class="icon-button" aria-label="查看项目目录" title="查看项目目录"><svg class="project-folder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v12H3V7Z"/><path d="M3 10h18"/></svg></button></div>
+      <div class="topbar-spacer"></div>
+      <button id="connectButton" class="connection-button"><span class="status-dot"></span><span id="connectionLabel">连接 Codex</span><span class="button-arrow">↗</span></button>
+      <button id="skillButton" class="subtle-button"><span aria-hidden="true">↧</span> <span>获取 Skill</span></button>
+    </header>
+
+    <main class="workspace">
+      <aside class="left-panel" id="leftPanel" aria-label="创作助手">
+        <div class="panel-heading"><h1>创作助手</h1><button class="icon-button panel-close" data-close-panel="left" aria-label="收起创作助手">‹</button></div>
+        <section class="reference-section"><div class="section-label"><span>参考图片 <span id="referenceCount" class="muted"></span></span><button id="uploadButton" class="text-button">＋ 添加图片</button></div><div id="referenceDropzone" class="reference-dropzone" tabindex="0" role="group" aria-label="项目参考图上传区，可拖入多张图片"><div id="references" class="reference-list"></div><p class="reference-drop-hint">支持多图拖入 · PNG / JPG / WEBP</p><div class="reference-drop-overlay" aria-hidden="true">松开以添加图片</div></div><div class="reference-selection-toolbar"><span id="referenceSelectionCount"></span><button id="selectAllReferences" class="text-button">全选</button><button id="clearReferenceSelection" class="text-button">取消选择</button></div><input id="referenceInput" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple><button id="generateButton" class="generate-button" disabled>开始建模</button><p id="referenceHint" class="reference-hint"></p></section>
+        <div class="chat-heading"><span>对话</span><span class="subtle" id="messageCount"></span></div>
+        <div id="messages" class="messages" role="log" aria-label="建模对话"></div>
+        <button id="newMessagesButton" hidden>有新回复 · 查看最新 ↓</button>
+        <div id="taskNotice"><section class="task-card" data-tone="neutral"><div class="task-card-top"><span class="task-state-dot" aria-hidden="true"></span><strong id="taskTitle" role="status" aria-live="polite">准备开始</strong><time id="taskElapsed"></time></div><p id="taskDescription">上传图片或输入建模要求。</p><div class="task-steps" aria-label="任务阶段"><span data-step="prepare">准备</span><span data-step="create">生成</span><span data-step="preview">预览</span></div><div class="task-card-bottom"><span id="taskActivity"></span><button id="taskCardStop" hidden>停止任务</button></div></section></div>
+        <div id="approvalPanel" class="approval-panel" hidden></div>
+        <form id="composer" class="composer">
+          <div id="selectionContext" class="selection-context" hidden></div>
+          <div class="conversation-attachment-toolbar"><button id="attachImagesButton" type="button">＋ 添加图片组</button><span id="conversationImageCount">也可拖入或粘贴图片</span></div>
+          <div id="conversationImageGroups"></div>
+          <label id="includeReferenceLabel" class="include-reference-label"><input id="includeProjectReferences" type="checkbox" checked>同时使用已选参考图 <span id="includedReferenceCount"></span></label>
+          <input id="conversationImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple>
+          <label class="composer-label" for="promptInput">继续对话 <span title="发送快捷键">Ctrl + Enter</span></label>
+          <textarea id="promptInput" rows="3" placeholder="描述要修改的地方…"></textarea>
+          <div class="composer-controls"><label class="model-choice"><span aria-hidden="true">✧</span><select id="modelSelect" aria-label="Codex 模型"><option value="">本地默认模型</option></select></label><button id="sendButton" type="submit" class="send-button" aria-label="发送建模要求" title="发送 · Ctrl + Enter">↑</button><button id="stopButton" type="button" class="stop-button" hidden aria-label="停止当前任务">■ 停止</button></div>
+        </form>
+      </aside>
+
+      <section class="stage" aria-label="三维工作区">
+        <div class="stage-top"><div class="stage-title"><button id="toggleLeft" class="icon-button" title="展开或收起创作助手" aria-label="展开或收起创作助手">☷</button><span id="stageProjectName">我的模型</span></div><button id="toggleRight" class="icon-button" title="展开或收起部件面板" aria-label="展开或收起部件面板">⊞</button></div>
+        <div id="versionPreviewBanner" class="version-preview-banner" hidden><div class="version-preview-copy"><small>历史版本 · 只读预览</small><strong id="previewVersionLabel"></strong><span id="previewVersionHint">当前工作版本未改变</span></div><button id="returnCurrentButton">返回当前版本</button></div>
+        <div id="viewportMount" class="viewport-mount"><div class="stage-placeholder"><span class="large-cube">◇</span><p>正在打开工作空间</p></div></div>
+        <div class="geometry-stats" id="geometryStats"></div>
+        <div class="stage-note" id="stageNote" hidden></div>
+        <div class="stage-tools"><button class="tool-button" id="wireButton" aria-pressed="false" title="切换线框"><span aria-hidden="true">▧</span> 线框</button><button class="tool-button" id="gridButton" aria-pressed="false" title="切换网格"><span aria-hidden="true">▦</span> 网格</button><button class="tool-button" id="animateButton" aria-pressed="false" title="播放模型动画"><span aria-hidden="true">▷</span> 动画</button><span class="tools-divider"></span><button class="tool-button" id="screenshotButton" title="保存当前视口截图"><span aria-hidden="true">▣</span> 截图</button></div>
+        <div class="viewport-bottom"><div class="camera-bar" aria-label="相机视角"><button data-view="perspective" class="active">透视</button><button data-view="front">正面</button><button data-view="side">侧面</button><button data-view="top">俯视</button><span class="camera-divider"></span><button data-view="cockpit">驾驶舱</button><button data-view="engine">发动机</button></div><button id="exportButton" class="export-button"><span aria-hidden="true">↧</span> 导出 GLB</button></div>
+        <div id="creationOverlay" class="creation-overlay" hidden><div class="creation-visual"><canvas id="creationParticles" aria-hidden="true"></canvas></div><h2 id="creationTitle">正在建模</h2><p id="creationDescription">正在生成模型。</p><div class="creation-meta"><span id="creationActivity">正在处理</span><time id="creationElapsed"></time></div><button id="overlayStopButton">停止任务</button><button id="overlayApprovalButton" class="text-button" hidden>查看待确认操作</button></div>
+      </section>
+
+      <aside class="right-panel" id="rightPanel" aria-label="模型检查器">
+        <div class="inspector-tabs" role="tablist" aria-label="模型检查器"><button role="tab" aria-selected="true" aria-controls="partsPane" data-tab="parts">部件</button><button role="tab" aria-selected="false" aria-controls="propertiesPane" data-tab="properties">属性</button><button role="tab" aria-selected="false" aria-controls="versionsPane" data-tab="versions">版本 <span id="versionCount"></span></button><button class="right-close" data-close-panel="right" aria-label="收起部件面板">×</button></div>
+        <section id="partsPane" class="inspector-pane" role="tabpanel">
+          <label class="part-search"><svg class="inspector-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="partSearch" placeholder="搜索部件…" aria-label="搜索模型部件"><kbd>Ctrl K</kbd></label>
+          <div class="scene-summary"><div class="scene-description"><strong id="sceneProjectName">我的模型</strong><span id="partCount">等待模型载入</span></div><button id="collapseParts" class="panel-icon-button" aria-label="收起全部分组" title="收起全部分组"><svg class="inspector-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7 4-4 4 4M8 17l4 4 4-4M4 12h16"/></svg></button></div>
+          <div id="partTree" class="part-tree"><p class="empty-small">模型载入后，部件将显示在这里。</p></div>
+          <div id="selectionSummary" class="selection-summary"><div class="selection-empty"><strong>未选择部件</strong><p>在模型或列表中选择部件。</p></div></div>
+        </section>
+        <section id="propertiesPane" class="inspector-pane" role="tabpanel" hidden><div id="properties"></div></section>
+        <section id="versionsPane" class="inspector-pane" role="tabpanel" hidden><div class="versions-heading"><h2>版本记录</h2><p id="versionStatusNote"></p></div><div id="versions"></div></section>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="connectDialog" class="modal"><div class="modal-header"><h2>连接 Codex</h2><button class="icon-button" data-close-dialog aria-label="关闭连接窗口">×</button></div><div id="connectDetails"></div><div class="modal-actions"><button id="retryConnect" class="primary-button">连接本地 CLI</button></div></dialog>
+  <dialog id="newProjectDialog" class="modal"><form id="newProjectForm"><div class="modal-header"><h2>新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭新建项目">×</button></div><label class="field-label" for="projectNameInput">项目名称</label><input id="projectNameInput" class="text-input" placeholder="例如：建筑模型" maxlength="80" required><label class="field-label" for="templateSelect">初始模型</label><select id="templateSelect" class="text-input"><option value="empty">空白项目</option><option value="airliner">客机示例</option></select><div class="modal-actions"><button type="submit" class="primary-button">创建项目</button></div></form></dialog>
+  <dialog id="skillDialog" class="modal"><div class="modal-header"><h2>安装建模 Skill</h2><button class="icon-button" data-close-dialog aria-label="关闭 Skill 窗口">×</button></div><div class="skill-card"><div><strong>Model Studio Skill</strong><p>Three.js 建模与模型校验</p></div></div><p class="modal-copy">将 ZIP 中的 <code>model-studio</code> 文件夹解压到项目的 <code>.agents/skills/</code> 目录，再重启本地 Agent。</p><div class="code-note"><span>创建 Skill 目录</span><code>mkdir .agents/skills</code></div><div class="modal-actions"><button id="copyWorkspaceButton" class="subtle-button">复制项目目录</button><a id="downloadSkill" class="primary-button" href="/downloads/model-studio-skill.zip" download>下载 Skill</a></div></dialog>
+  <dialog id="projectInfoDialog" class="modal"><div class="modal-header"><h2>本地项目</h2><button class="icon-button" data-close-dialog aria-label="关闭项目信息">×</button></div><p class="modal-copy">建模源码、参考图片与版本记录都保存在这个目录。</p><code id="workspacePath" class="path-block"></code><div class="modal-actions"><button id="copyPathButton" class="primary-button">复制目录</button></div></dialog>
+  <dialog id="attachmentPreviewDialog" class="modal attachment-preview-dialog"><div class="modal-header"><h2 id="attachmentPreviewCaption">参考图片</h2><button class="icon-button" data-close-dialog aria-label="关闭图片预览">×</button></div><img id="attachmentPreviewImage" alt="参考图片大图"></dialog>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+  <script type="module" src="/studio-web/app.js"></script>
+</body>
+</html>

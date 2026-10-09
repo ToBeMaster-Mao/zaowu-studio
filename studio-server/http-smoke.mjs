@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+const base=process.env.STUDIO_TEST_URL||'http://127.0.0.1:4174';
+const html=await(await fetch(base)).text();
+const token=html.match(/name="studio-token"\s+content="([^"]+)"/)?.[1];
+assert.ok(token,'HTML session token');
+const headers={'x-studio-token':token};
+assert.equal((await fetch(`${base}/api/bootstrap`)).status,401,'unauthenticated API blocked');
+assert.equal((await fetch(`${base}/api/bootstrap`,{headers:{...headers,Origin:'https://unrelated.example'}})).status,403,'foreign origin blocked');
+const response=await fetch(`${base}/api/bootstrap`,{headers});assert.equal(response.status,200);
+const data=await response.json();assert.ok(data.projects.length>0);
+const project=data.projects.find(p=>p.id==='airliner')||data.projects[0];
+assert.equal((await fetch(`${base}/artifacts/${project.id}/model.js?version=${project.headId}`)).status,403,'unpaired artifact read blocked');
+const source=await(await fetch(base+project.modelUrl)).text();assert.match(source,/export function createModel/);
+if(project.references.length)assert.ok((await fetch(base+project.references[0].url)).headers.get('content-type')?.startsWith('image/'));
+else assert.equal(project.references.length,0,'new projects start without personal reference images');
+const zip=Buffer.from(await(await fetch(`${base}/downloads/model-studio-skill.zip`)).arrayBuffer());assert.equal(zip.subarray(0,2).toString(),'PK');
+assert.ok(data.bridge.connected,'local Codex handshake');assert.ok(data.bridge.models.length>0,'models available');
+console.log(JSON.stringify({checks:8,projects:data.projects.length,bridgeConnected:true,models:data.bridge.models.length,skillBytes:zip.length}));

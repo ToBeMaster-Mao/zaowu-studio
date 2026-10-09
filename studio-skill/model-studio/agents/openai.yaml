@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Studio 三维建模"
+  short_description: "根据参考图和选中部件修改 Three.js 模型，保留可编辑工程与稳定部件名称"
+  default_prompt: "使用 $model-studio，在我指定的本地工程中根据参考图和选中部件修改模型，并检查结果。"
