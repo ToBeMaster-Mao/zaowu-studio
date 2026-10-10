@@ -1,11 +1,19 @@
 import { createLogoParticles } from '../studio-web/brand/logo-particles.js';
 
+document.documentElement.dataset.background = new URLSearchParams(window.location.search).get('background') === 'light' ? 'light' : 'dark';
+
 // This module is independent of Three.js so it starts while the renderer loads.
 const notice = document.getElementById('notice');
 const visual = document.getElementById('loading-logo');
 const canvas = document.getElementById('loading-particles');
 let particles;
 let bootstrapFrame = 0, bootstrapTimer = 0, viewerStarted = false;
+
+function updateBackground(event) {
+  if (event.source !== window.parent || event.data?.source !== 'model-studio' || event.data.type !== 'background') return;
+  document.documentElement.dataset.background = event.data.value === 'light' ? 'light' : 'dark';
+}
+window.addEventListener('message', updateBackground);
 
 function startViewer() {
   if (viewerStarted) return;
@@ -27,6 +35,7 @@ function dispose() {
   particles?.destroy();
   particles = null;
   visual.classList.remove('is-animated');
+  window.removeEventListener('message', updateBackground);
   window.removeEventListener('pagehide', dispose);
 }
 

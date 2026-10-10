@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/studio-web/viewport-workspace.css">
   <link rel="stylesheet" href="/studio-web/select-menu.css">
   <link rel="stylesheet" href="/studio-web/creator-panel.css">
+  <link rel="stylesheet" href="/studio-web/display-settings.css">
   <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
 </head>
 <body>
@@ -59,8 +60,14 @@
             <button id="toggleLeft" class="icon-button stage-action-button stage-sidebar-button" type="button" title="展开或收起创作助手" aria-label="展开或收起创作助手" aria-controls="leftPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 4v16M6.5 8H7M6.5 12H7M6.5 16H7"/></svg></button>
             <div class="stage-project-info"><strong id="stageProjectName">我的模型</strong><div class="geometry-stats" id="geometryStats"></div></div>
           </div>
-          <div class="stage-view-actions" role="group" aria-label="视口操作"><button id="resetViewButton" class="icon-button stage-action-button" type="button" title="复位到透视视角" aria-label="复位到透视视角" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.3 8.3a7.5 7.5 0 1 1-.6 6.2M5 3.8v4.8h4.8"/></svg></button><button id="toggleRight" class="icon-button stage-action-button" type="button" title="展开或收起部件面板" aria-label="展开或收起部件面板" aria-controls="rightPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16M17 8h1M17 12h1M17 16h1"/></svg></button></div>
+          <div class="stage-view-actions" role="group" aria-label="视口操作"><button id="displaySettingsButton" class="icon-button stage-action-button" type="button" title="显示设置" aria-label="显示设置" aria-expanded="false" aria-controls="displaySettingsPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9m4 0h3M4 12h3m4 0h9M4 18h9m4 0h3"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="18" r="2"/></svg></button><button id="resetViewButton" class="icon-button stage-action-button" type="button" title="复位到透视视角" aria-label="复位到透视视角" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.3 8.3a7.5 7.5 0 1 1-.6 6.2M5 3.8v4.8h4.8"/></svg></button><button id="toggleRight" class="icon-button stage-action-button" type="button" title="展开或收起部件面板" aria-label="展开或收起部件面板" aria-controls="rightPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16M17 8h1M17 12h1M17 16h1"/></svg></button></div>
         </div>
+        <section id="displaySettingsPanel" class="display-settings-panel" aria-label="显示设置" hidden>
+          <div class="display-settings-heading"><strong>显示设置</strong><button id="closeDisplaySettings" type="button" aria-label="关闭显示设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+          <div class="display-setting-row"><span>背景</span><div class="background-options" role="group" aria-label="视口背景"><button type="button" data-background="dark" aria-pressed="true"><span class="background-swatch dark" aria-hidden="true"></span>深色</button><button type="button" data-background="light" aria-pressed="false"><span class="background-swatch light" aria-hidden="true"></span>浅色</button></div></div>
+          <label class="display-setting-row display-switch-row" for="clayToggle"><span>白模</span><input id="clayToggle" type="checkbox" role="switch" disabled><span class="display-switch" aria-hidden="true"></span></label>
+          <label class="display-setting-row display-switch-row" for="explodeToggle"><span>部件展开</span><input id="explodeToggle" type="checkbox" role="switch" disabled><span class="display-switch" aria-hidden="true"></span></label>
+        </section>
         <div id="versionPreviewBanner" class="version-preview-banner" hidden><div class="version-preview-copy"><small>历史版本 · 只读预览</small><strong id="previewVersionLabel"></strong><span id="previewVersionHint">当前工作版本未改变</span></div><button id="returnCurrentButton">返回当前版本</button></div>
         <div id="viewportMount" class="viewport-mount"><div class="stage-placeholder"><span class="large-cube">◇</span><p>正在打开工作空间</p></div></div>
         <div class="viewport-toolbar" role="group" aria-label="模型视图工具">

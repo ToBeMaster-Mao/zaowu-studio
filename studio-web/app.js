@@ -7,11 +7,14 @@ import { enhanceSelect } from './select-menu.js';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const token = $('meta[name="studio-token"]').content;
+let displayPreferences = {};
+try { displayPreferences = JSON.parse(localStorage.getItem('studio-display-preferences')) || {}; } catch { /* Use defaults if local preferences are unavailable. */ }
 const state = {
   projects: [], project: null, bridge: { connected: false, models: [] },
   parts: [], selection: null, camera: null, ready: false, iframe: null,
   modelKey: '', modelChoice: '', activeTab: 'parts', openCategories: new Set(['cockpit']), expandedPartLists: new Set(),
-  toggles: { wireframe: false, grid: false, animate: false }, liveMessages: new Map(),
+  toggles: { wireframe: false, grid: false, animate: false, clay: displayPreferences.clay === true, explode: false }, liveMessages: new Map(),
+  background: displayPreferences.background === 'light' ? 'light' : 'dark', canExplode: false, hasMeshes: false, hasAnimation: false,
   approvals: new Map(), loadingProject: 0, taskSubmitting: false, skillUrl: '/downloads/model-studio-skill.zip',
   referenceIds: new Set(), uploading: false, submitIntent: 'chat', submittedAt: null,
   stoppingTaskId: null, streamConnected: true, activity: '', lastActivityAt: null, submissionError: null,
@@ -96,6 +99,26 @@ function setPanelOpen(side, open) {
   app.classList.toggle(`${side}-open`, drawer && open);
   app.classList.toggle(`${side}-hidden`, !drawer && !open);
   syncPanelControls();
+}
+
+function renderDisplaySettings() {
+  $('.stage').dataset.background = state.background;
+  $$('.background-options [data-background]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.background === state.background)));
+  $('#clayToggle').checked = state.toggles.clay;
+  $('#clayToggle').disabled = !state.ready || !state.hasMeshes || localBusy();
+  $('#explodeToggle').checked = state.toggles.explode;
+  $('#explodeToggle').disabled = !state.ready || !state.canExplode || localBusy();
+  $('#explodeToggle').closest('label').title = state.ready && !state.canExplode ? '需要两个以上可独立展开的部件' : '展开查看部件关系，关闭后合拢';
+}
+
+function saveDisplayPreferences() {
+  try { localStorage.setItem('studio-display-preferences', JSON.stringify({ background: state.background, clay: state.toggles.clay })); } catch { /* The current preview remains usable without persistence. */ }
+}
+
+function setDisplaySettingsOpen(open, focus = false) {
+  $('#displaySettingsPanel').hidden = !open;
+  $('#displaySettingsButton').setAttribute('aria-expanded', String(open));
+  if (focus) (open ? $('.background-options [aria-pressed="true"]') : $('#displaySettingsButton')).focus();
 }
 
 async function api(url, options = {}) {
@@ -329,6 +352,7 @@ function renderTask() {
   $('#creationActivity').textContent = ({ submitting: '准备中', validating: '正在载入预览', approval: '等待确认', stopping: '正在停止', disconnected: '等待恢复连接' })[feedback.phase] || '正在创作';
   $('#overlayApprovalButton').hidden = feedback.phase !== 'approval';
   creationParticles.setActive(showCreation);
+  renderDisplaySettings();
   updateElapsed();
   renderVersions();
 }
@@ -362,6 +386,8 @@ function loadModel(project, modelKey, revision = null) {
   state.displayRevisionId = revision?.id || project.pendingRevisionId || project.headId;
   state.displayOverrides = structuredClone(revision?.overrides || project.overrides || {});
   state.ready = false;
+  state.hasMeshes = false; state.canExplode = false; state.hasAnimation = false; state.toggles.explode = false;
+  renderDisplaySettings();
   state.parts = [];
   state.selection = null;
   $('#partSearch').value = '';
@@ -380,7 +406,8 @@ function loadModel(project, modelKey, revision = null) {
   const frame = document.createElement('iframe');
   frame.title = `${project.name}${revision ? ` · V${revisionNumber(revision.id)} 历史版本` : ''} · 三维视口`;
   frame.setAttribute('sandbox', 'allow-scripts allow-downloads');
-  frame.src = `/studio-viewer/preview.html?model=${encodeURIComponent(project.modelUrl)}`;
+  frame.src = `/studio-viewer/preview.html?model=${encodeURIComponent(project.modelUrl)}&background=${state.background}`;
+  frame.addEventListener('load', () => { if (state.iframe === frame) viewerCommand('background', { value: state.background }); });
   state.iframe = frame;
   $('#viewportMount').replaceChildren(frame);
 }
@@ -401,6 +428,7 @@ function syncCameraSelector() {
 }
 
 function renderAnimationControl(available) {
+  state.hasAnimation = Boolean(available);
   const button = $('#animateButton');
   button.disabled = !available;
   if (!available) state.toggles.animate = false;
@@ -447,6 +475,8 @@ window.addEventListener('message', event => {
   }
   if (data.type === 'ready') {
     state.ready = true;
+    state.canExplode = data.canExplode === true;
+    state.hasMeshes = Number(data.stats?.meshes) > 0;
     $('.stage').classList.remove('is-loading');
     state.parts = data.parts || [];
     state.camera = data.camera;
@@ -462,11 +492,18 @@ window.addEventListener('message', event => {
     for (const id of ['exportButton', 'resetViewButton', 'cameraViewSelect', 'wireButton', 'gridButton', 'screenshotButton']) $(`#${id}`).disabled = false;
     renderAnimationControl(Boolean(data.animationCount));
     for (const [partId, patch] of Object.entries(state.displayOverrides)) if (state.parts.some(part => part.id === partId)) viewerCommand('setPart', { partId, ...patch });
+    viewerCommand('background', { value: state.background });
     for (const [type, value] of Object.entries(state.toggles)) viewerCommand(type, { value });
     renderParts();
     renderSelection();
     renderTask();
     void validateRevision(true);
+  } else if (data.type === 'displayState') {
+    if (typeof data.clay === 'boolean') state.toggles.clay = data.clay;
+    if (typeof data.exploded === 'boolean') state.toggles.explode = data.exploded;
+    if (typeof data.animate === 'boolean') state.toggles.animate = data.animate;
+    renderAnimationControl(state.hasAnimation);
+    renderDisplaySettings();
   } else if (data.type === 'selection') {
     state.selection = data.selection || null;
     state.camera = data.camera || state.camera;
@@ -978,6 +1015,26 @@ $('#messages').addEventListener('scroll', () => {
   if (node.scrollHeight - node.scrollTop - node.clientHeight < 70) $('#newMessagesButton').hidden = true;
 });
 $('#cameraViewSelect').onchange = event => { if (state.ready) viewerCommand('view', { view: event.target.value }); };
+$('#displaySettingsButton').onclick = () => setDisplaySettingsOpen($('#displaySettingsPanel').hidden, true);
+$('#closeDisplaySettings').onclick = () => setDisplaySettingsOpen(false, true);
+$$('.background-options [data-background]').forEach(button => { button.onclick = () => {
+  state.background = button.dataset.background;
+  renderDisplaySettings(); saveDisplayPreferences();
+  viewerCommand('background', { value: state.background });
+}; });
+$('#clayToggle').onchange = event => {
+  state.toggles.clay = event.target.checked;
+  saveDisplayPreferences(); viewerCommand('clay', { value: state.toggles.clay });
+};
+$('#explodeToggle').onchange = event => {
+  state.toggles.explode = event.target.checked;
+  viewerCommand('explode', { value: state.toggles.explode });
+};
+document.addEventListener('pointerdown', event => {
+  if (!$('#displaySettingsPanel').hidden && !$('#displaySettingsPanel').contains(event.target) && !$('#displaySettingsButton').contains(event.target)) setDisplaySettingsOpen(false);
+});
+window.addEventListener('blur', () => { if (document.activeElement === state.iframe) setDisplaySettingsOpen(false); });
+renderDisplaySettings();
 [['wireButton', 'wireframe'], ['gridButton', 'grid'], ['animateButton', 'animate']].forEach(([id, type]) => {
   $(`#${id}`).onclick = () => {
     state.toggles[type] = !state.toggles[type];
@@ -1027,6 +1084,7 @@ $$('[data-close-panel]').forEach(button => { button.onclick = () => setPanelOpen
 window.addEventListener('resize', syncPanelControls);
 syncPanelControls();
 window.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !$('#displaySettingsPanel').hidden) { event.preventDefault(); setDisplaySettingsOpen(false, true); return; }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
     event.preventDefault();
     setPanelOpen('right', true);

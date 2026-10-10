@@ -4,6 +4,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { createOrientationControl, viewDirections } from './orientation-control.js';
 import { summarizeMaterialColor } from './material-color.js';
+import { createPreviewMaterials } from './preview-materials.js';
+import { createExplodedView } from './exploded-view.js';
 
 // Executed only in an opaque-origin sandbox. The bridge and workspace APIs live
 // in the parent; this module exchanges explicit, serializable viewport commands.
@@ -12,11 +14,14 @@ const notice = document.getElementById('notice');
 const noticeText = document.getElementById('notice-text');
 const post = (type, payload = {}, transfer = []) => window.parent.postMessage({ source: 'model-studio-viewport', type, ...payload }, '*', transfer);
 const limits = { objects: 15000, vertices: 2000000, indices: 12000000, extent: 100000 };
-const byId = new Map(), idByObject = new WeakMap(), originalWireframe = new Map();
+const byId = new Map(), idByObject = new WeakMap();
 let renderer, scene, camera, controls, root, mixer, environment, ground, grid, outline, resizeObserver, orientationControl;
+let previewMaterials, explodedView;
 let animations = [], meshes = [], parts = [], fitPoints = [], bounds, size, center, selectedId = null;
 let ready = false, disposed = false, wireframe = false, animate = false, currentView = 'perspective';
 let previousTime = performance.now(), pointerStart = null, cameraTimer = null;
+let background = (document.documentElement.dataset.background || new URLSearchParams(window.location.search).get('background')) === 'light' ? 'light' : 'dark';
+let explosionFitPending = false;
 const pending = [];
 const categoryMatchers = [
   ['cockpit', /cockpit|windscreen|windshield|驾驶舱|风挡/i],
@@ -75,8 +80,8 @@ function describePart(id, object) {
     id, name: object.name || (object.isMesh ? 'Unnamed mesh' : 'Group'),
     parentId: idByObject.get(object.parent) || null,
     kind: object.isMesh ? 'mesh' : 'group', category: classify(object),
-    visible: object.visible, position: object.position.toArray(),
-    ...summarizeMaterialColor(object),
+    visible: object.visible, position: (explodedView?.getRestPosition(object) || object.position).toArray(),
+    ...summarizeMaterialColor(object, part => previewMaterials?.getOriginalMaterial(part) ?? part.material),
   };
 }
 
@@ -114,7 +119,6 @@ function validateAndIndex(modelRoot) {
       }
       triangles += (geometry.index?.count ?? positions.count) / 3;
       meshes.push(object);
-      for (const material of materialsOf(object)) if ('wireframe' in material) originalWireframe.set(material, Boolean(material.wireframe));
     }
     const counts = new Map();
     const children = object.children.map((child, index) => {
@@ -161,21 +165,23 @@ function select(partId, notify = true) {
   const object = byId.get(selectedId);
   outline.visible = Boolean(object && visibleInHierarchy(object));
   if (object) outline.setFromObject(object);
-  if (notify) post('selection', { partId: selectedId, name: object?.name || null, position: object?.position.toArray() || null, camera: cameraState(), selection: selectionState() });
+  if (notify) post('selection', { partId: selectedId, name: object?.name || null, position: object ? (explodedView?.getRestPosition(object) || object.position).toArray() : null, camera: cameraState(), selection: selectionState() });
 }
 
 const directions = Object.fromEntries(Object.entries(viewDirections).map(([view, direction]) => [view, new THREE.Vector3(...direction)]));
 
 function fit(view = 'perspective') {
-  if (!(view in directions) && view !== 'cockpit' && view !== 'engine') return;
+  if (!(view in directions) && view !== 'cockpit' && view !== 'engine' && view !== 'custom') return;
   // Discard the previous drag's damping before a deliberate view switch.
   const damping = controls.enableDamping;
   controls.enableDamping = false;
   controls.update();
   controls.enableDamping = damping;
   currentView = view;
-  let box = bounds.clone();
-  let direction = (directions[view] || directions.perspective).clone().normalize();
+  const expanded = explodedView?.expanded || explodedView?.moving;
+  let box = expanded ? new THREE.Box3().setFromObject(root) : bounds.clone();
+  let direction = view === 'custom' ? camera.position.clone().sub(controls.target).normalize()
+    : (directions[view] || directions.perspective).clone().normalize();
   if (view === 'cockpit' || view === 'engine') {
     const expression = view === 'cockpit' ? /cockpit|windscreen|windshield|驾驶舱|风挡/i : /^(Engine_1|Engine_R|Engine_right)$/i;
     let candidates = [...byId.values()].filter(object => expression.test(object.name));
@@ -188,13 +194,13 @@ function fit(view = 'perspective') {
     }
   }
   const target = box.getCenter(new THREE.Vector3());
-  camera.up.set(0, 1, 0);
+  if (view !== 'custom') camera.up.set(0, 1, 0);
   if (view === 'top' || view === 'bottom') camera.up.set(-1, 0, 0);
   const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
   const up = new THREE.Vector3().crossVectors(direction, right).normalize();
   const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   let distance = 0;
-  const points = view in directions && fitPoints.length ? fitPoints : [];
+  const points = !expanded && view in directions && fitPoints.length ? fitPoints : [];
   if (!points.length) for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) points.push(new THREE.Vector3(x, y, z));
   for (const worldPoint of points) {
     const point = worldPoint.clone().sub(target);
@@ -211,7 +217,37 @@ function fit(view = 'perspective') {
 
 function setWireframe(value) {
   wireframe = Boolean(value);
-  for (const [material, original] of originalWireframe) material.wireframe = wireframe || original;
+  previewMaterials.setWireframe(wireframe);
+}
+
+function setBackground(value) {
+  background = value === 'light' ? 'light' : 'dark';
+  const light = background === 'light';
+  document.documentElement.dataset.background = background;
+  if (scene) scene.background = new THREE.Color(light ? '#ffffff' : '#16191d');
+  if (ground) {
+    ground.material.color.set(light ? '#53606a' : '#020306');
+    ground.material.opacity = light ? .18 : .32;
+  }
+  if (grid) {
+    grid.material.color.set(light ? '#52606c' : '#ffffff');
+    grid.material.opacity = light ? .2 : .27;
+  }
+}
+
+function displayState() {
+  post('displayState', { background, clay: previewMaterials.clay, exploded: Boolean(explodedView?.expanded), animate });
+}
+
+function setExploded(value) {
+  if (!explodedView.canExplode) return;
+  if (Boolean(value) && animate) {
+    animate = false;
+    mixer.setTime(0);
+  }
+  explodedView.setExpanded(Boolean(value));
+  explosionFitPending = true;
+  displayState();
 }
 
 function setPart(data) {
@@ -220,20 +256,11 @@ function setPart(data) {
   if (typeof data.visible === 'boolean') object.visible = data.visible;
   if (data.position !== undefined) {
     if (!isFiniteVector(data.position)) throw new Error('部件坐标必须是三个有效数值。');
-    object.position.fromArray(data.position);
+    explodedView.setRestPosition(object, data.position);
   }
   if (data.color !== undefined) {
     if (typeof data.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(data.color)) throw new Error('材质颜色须使用 #RRGGBB 格式。');
-    object.traverse(child => {
-      if (!child.isMesh) return;
-      const cloned = materialsOf(child).map(material => {
-        const copy = material.clone();
-        if (copy.color) copy.color.set(data.color);
-        if ('wireframe' in copy) originalWireframe.set(copy, originalWireframe.get(material) || false);
-        return copy;
-      });
-      child.material = Array.isArray(child.material) ? cloned : cloned[0];
-    });
+    previewMaterials.setColor(object, data.color);
   }
   root.updateMatrixWorld(true);
   if (selectedId) select(selectedId, false);
@@ -243,12 +270,20 @@ function setPart(data) {
 
 let exporting = false;
 async function handleCommand(data) {
+  if (exporting) { if (pending.length < 30) pending.push(data); return; }
   try {
     switch (data.type) {
       case 'view': fit(data.view); break;
       case 'wireframe': setWireframe(data.value); break;
+      case 'background': setBackground(data.value); displayState(); break;
+      case 'clay': previewMaterials.setClay(data.value); displayState(); break;
+      case 'explode': setExploded(data.value); break;
       case 'grid': grid.visible = Boolean(data.value); break;
-      case 'animate': animate = Boolean(data.value); break;
+      case 'animate':
+        if (data.value && explodedView.expanded) { explodedView.setExpanded(false); explosionFitPending = true; }
+        animate = Boolean(data.value);
+        displayState();
+        break;
       case 'select': select(data.partId); break;
       case 'setPart': setPart(data); break;
       case 'requestState': post('state', { requestId: data.requestId, camera: cameraState(), selection: selectionState(), parts }); break;
@@ -262,14 +297,13 @@ async function handleCommand(data) {
         const wasAnimating = animate;
         animate = false;
         try {
-          // Export the material, not the temporary inspection wireframe.
-          for (const [material, original] of originalWireframe) material.wireframe = original;
-          const buffer = await new GLTFExporter().parseAsync(root, { binary: true, animations, onlyVisible: true, trs: true });
+          const buffer = await explodedView.withRestPose(() => previewMaterials.withOriginalMaterials(() =>
+            new GLTFExporter().parseAsync(root, { binary: true, animations, onlyVisible: true, trs: true })));
           post('export', { requestId: data.requestId, buffer }, [buffer]);
         } finally {
           exporting = false;
           animate = wasAnimating;
-          setWireframe(wireframe);
+          for (const queued of pending.splice(0)) await handleCommand(queued);
         }
         break;
       }
@@ -281,6 +315,7 @@ window.addEventListener('message', event => {
   if (event.source !== window.parent || !event.data || event.data.source !== 'model-studio' || disposed) return;
   const data = event.data;
   if (typeof data.type !== 'string') return;
+  if (!ready && data.type === 'background') { setBackground(data.value); return; }
   if (!ready) { if (pending.length < 30) pending.push(data); return; }
   handleCommand(data);
 });
@@ -295,6 +330,8 @@ function dispose() {
   controls?.dispose();
   mixer?.stopAllAction();
   if (root) mixer?.uncacheRoot(root);
+  explodedView?.dispose();
+  previewMaterials?.dispose();
   const geometries = new Set(), materials = new Set(), textures = new Set();
   const collect = object => {
     if (object.geometry) geometries.add(object.geometry);
@@ -304,7 +341,7 @@ function dispose() {
   scene?.traverse(collect);
   // A module can fail validation before its root is attached to the scene.
   if (root instanceof THREE.Object3D && root.parent !== scene) root.traverse(collect);
-  for (const material of originalWireframe.keys()) materials.add(material);
+  for (const material of previewMaterials?.getOriginalMaterials() || []) materials.add(material);
   for (const geometry of geometries) geometry.dispose();
   for (const material of materials) {
     for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
@@ -331,7 +368,7 @@ async function start() {
   renderer.domElement.setAttribute('aria-label', '三维模型，可拖动旋转');
   renderer.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); fail(new Error('图形上下文已中断，请重新载入模型。')); });
   scene = new THREE.Scene();
-  scene.background = new THREE.Color('#16191d');
+  setBackground(background);
   camera = new THREE.PerspectiveCamera(33, 1, .01, 10000);
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -354,6 +391,8 @@ async function start() {
   const model = await modelModule.createModel();
   root = model?.root;
   const stats = validateAndIndex(root);
+  previewMaterials = createPreviewMaterials(root);
+  explodedView = createExplodedView(root);
   animations = Array.isArray(model.animations) ? model.animations.filter(clip => clip instanceof THREE.AnimationClip) : [];
   scene.add(root);
   const extent = Math.max(size.x, size.y, size.z);
@@ -387,6 +426,7 @@ async function start() {
   grid.material.opacity = .27;
   grid.visible = false;
   scene.add(grid);
+  setBackground(background);
   outline = new THREE.BoxHelper(undefined, '#c4eb7b');
   outline.material.depthTest = false;
   outline.material.transparent = true;
@@ -424,11 +464,17 @@ async function start() {
   renderer.render(scene, camera);
   notice.hidden = true;
   ready = true;
-  post('ready', { stats, parts, bounds: { min: bounds.min.toArray(), max: bounds.max.toArray(), center: center.toArray(), size: size.toArray() }, camera: cameraState(), animationCount: animations.length });
+  post('ready', { stats, parts, bounds: { min: bounds.min.toArray(), max: bounds.max.toArray(), center: center.toArray(), size: size.toArray() }, camera: cameraState(), animationCount: animations.length, canExplode: explodedView.canExplode });
   renderer.setAnimationLoop(time => {
     const delta = Math.min((time - previousTime) / 1000, .05);
     previousTime = time;
-    if (animate) mixer.update(delta);
+    if (exporting) return;
+    if (animate && !explodedView.expanded && !explodedView.moving) mixer.update(delta);
+    explodedView.update(delta);
+    if (explosionFitPending && !explodedView.moving) {
+      explosionFitPending = false;
+      fit(currentView);
+    }
     controls.update();
     orientationControl.update();
     if (selectedId && outline.visible) outline.update();
