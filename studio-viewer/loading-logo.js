@@ -19,7 +19,7 @@ function update() {
     dispose();
     return;
   }
-  particles ||= createLogoParticles(canvas);
+  particles ||= createLogoParticles(canvas, { maxLogoSize: 256 });
   if (particles.supported) {
     particles.setActive(true);
     visual.classList.add('is-animated');

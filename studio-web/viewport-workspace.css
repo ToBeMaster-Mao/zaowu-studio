@@ -5,6 +5,16 @@
 
 .stage .viewport-mount { bottom: 88px; }
 
+.stage.is-loading .stage-title { max-width: 220px; }
+.stage.is-loading .viewport-mount { bottom: 0; }
+.stage.is-loading .stage-project-info { padding-top: 8px; }
+.stage.is-loading #geometryStats { display: none; }
+.stage.is-loading .viewport-toolbar { visibility: hidden; }
+
+@container model-viewport (max-width: 899px) {
+  .stage.is-loading .stage-title { max-width: none; }
+}
+
 .stage .stage-top {
   top: 18px;
   left: 20px;

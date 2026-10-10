@@ -1,0 +1,129 @@
+.studio-select-source { display: none !important; }
+
+.studio-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #d8dfe5;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.studio-select-trigger:hover:not(:disabled),
+.studio-select-trigger[aria-expanded="true"] {
+  border-color: #ffffff16;
+  background: #ffffff06;
+}
+
+.studio-select-trigger:focus-visible {
+  outline: 2px solid #d3f28a;
+  outline-offset: 3px;
+}
+
+.studio-select-trigger:disabled { cursor: not-allowed; opacity: .4; }
+.studio-select-value { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+.studio-select-chevron,
+.studio-select-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.studio-select-chevron { color: #8f9ca7; transition: transform .15s ease; }
+.studio-select-trigger[aria-expanded="true"] .studio-select-chevron { transform: rotate(180deg); }
+.project-control > .studio-select-trigger { flex: 1; max-width: 225px; }
+.model-choice > .studio-select-trigger { flex: 1; width: 100%; max-width: 190px; padding-left: 3px; color: #b7c1cb; }
+.camera-select-wrap > .studio-select-trigger { width: 100%; height: 100%; min-height: 0; padding: 0 9px 0 11px; gap: 5px; border-color: #ffffff12; background: #2a3036; font-weight: 500; }
+.camera-select-wrap > .studio-select-trigger:hover:not(:disabled),
+.camera-select-wrap > .studio-select-trigger[aria-expanded="true"] { border-color: #ffffff25; background: #30383e; }
+.camera-select-wrap > .studio-select-source ~ svg { display: none; }
+
+.studio-select-menu {
+  position: fixed;
+  z-index: 150;
+  box-sizing: border-box;
+  padding: 6px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #ffffff19;
+  border-radius: 11px;
+  background: #252b30;
+  color: #c9d2da;
+  box-shadow: 0 12px 36px #0006, 0 2px 8px #0003, inset 0 1px 0 #ffffff04;
+  outline: none;
+  scrollbar-width: thin;
+  scrollbar-color: #55606a transparent;
+  animation: studio-select-in .12s ease-out;
+}
+
+.studio-select-menu:focus-visible { outline: none; }
+.studio-select-menu[hidden] { display: none !important; }
+.studio-select-menu[data-placement="top"] { --menu-enter-y: 3px; }
+.studio-select-menu[data-placement="bottom"] { --menu-enter-y: -3px; }
+
+.studio-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.studio-select-option + .studio-select-option { margin-top: 2px; }
+.studio-select-option-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.studio-select-check { visibility: hidden; color: #d3f28a; }
+.studio-select-option[aria-selected="true"] { background: #d3f28a14; color: #dfefbf; }
+.studio-select-option[aria-selected="true"] .studio-select-check { visibility: visible; }
+.studio-select-option.is-active:not([aria-disabled="true"]) { background: #ffffff0d; color: #edf0f3; }
+.studio-select-option[aria-selected="true"].is-active { background: #d3f28a20; color: #e6f4c7; }
+.studio-select-option[aria-disabled="true"] { opacity: .35; cursor: not-allowed; }
+
+@keyframes studio-select-in {
+  from { opacity: 0; transform: translateY(var(--menu-enter-y, -3px)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1190px) {
+  .project-control > .studio-select-trigger { max-width: 180px; }
+}
+
+@media (max-width: 690px) {
+  .project-control > .studio-select-trigger { max-width: 110px; padding-left: 4px; padding-right: 4px; gap: 5px; }
+}
+
+@container model-viewport (max-width: 440px) {
+  .camera-select-wrap > .studio-select-trigger { padding-left: 8px; padding-right: 6px; gap: 3px; }
+}
+
+@container model-viewport (max-width: 360px) {
+  .camera-select-wrap > .studio-select-trigger { padding-left: 6px; padding-right: 3px; gap: 2px; font-size: 12px; }
+  .camera-select-wrap .studio-select-chevron { width: 14px; height: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-select-menu { animation: none; }
+  .studio-select-chevron { transition: none; }
+}

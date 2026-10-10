@@ -2,6 +2,7 @@ import { partLabel, partDetail } from './part-labels.js';
 import { createCreationParticles } from './creation-particles.js';
 import { describeTask, elapsedLabel } from './task-status.js';
 import { createConversationImages } from './conversation-images.js';
+import { enhanceSelect } from './select-menu.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -21,6 +22,7 @@ const state = {
   imageGroupsEnabled: false, imageLimits: { perTask: 8, projectLibrary: 128 }, conversationDrafts: new Map(),
 };
 const revisionCache = new Map();
+const selectMenus = new Map(['projectSelect', 'modelSelect', 'cameraViewSelect'].map(id => [id, enhanceSelect($(`#${id}`))]));
 const creationParticles = createCreationParticles($('#creationParticles'));
 const pendingRpc = new Map();
 const pendingPartUpdates = new Set();
@@ -123,6 +125,7 @@ function renderProjects() {
   const select = $('#projectSelect');
   select.innerHTML = state.projects.map(project => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)}</option>`).join('');
   if (state.project) select.value = state.project.id;
+  selectMenus.get('projectSelect').refresh();
 }
 
 function rememberProject(project) {
@@ -343,6 +346,7 @@ function renderBridge() {
   const previous = $('#modelSelect').value || state.modelChoice;
   $('#modelSelect').innerHTML = '<option value="">本地默认模型</option>' + models.map(model => `<option value="${escapeHtml(model.model || model.id)}">${escapeHtml(model.displayName || model.id)}</option>`).join('');
   if ([...$('#modelSelect').options].some(option => option.value === previous)) $('#modelSelect').value = previous;
+  selectMenus.get('modelSelect').refresh();
   const accountLabel = bridge.account?.type === 'chatgpt' ? 'ChatGPT' : bridge.account?.type === 'apiKey' ? 'API 登录' : bridge.account?.type || '使用本地 CLI 登录';
   $('#connectDetails').innerHTML = `<div class="connection-state ${bridge.connected ? 'connected' : ''}"><span class="status-dot"></span><div><strong>${bridge.connected ? '本地 Codex 已连接' : '等待连接本地 Codex CLI'}</strong><small>通过本机连接程序与 Codex app-server 通信</small></div></div>${bridge.error ? `<div class="connection-error">${escapeHtml(bridge.error)}</div>` : ''}<div class="connection-detail"><span>登录方式</span><strong>${escapeHtml(accountLabel)}${bridge.account?.planType ? ` · ${escapeHtml(bridge.account.planType)}` : ''}</strong></div><div class="connection-detail"><span>可选模型</span><strong>${models.length ? `${models.length} 个模型` : '连接后读取'}</strong></div><div class="connection-detail"><span>工作范围</span><strong>当前项目目录</strong></div><p class="modal-copy" style="margin-top:20px">首次使用时，请在电脑终端运行 <code>codex login</code> 完成登录。工作台使用现有登录，需要许可的操作会显示在创作助手中。</p><div class="code-note"><span>如果还没有安装 Codex CLI</span><code>npm install -g @openai/codex<br>codex login</code></div>`;
   $('#retryConnect').innerHTML = `${bridge.connected ? '重新检查连接' : '连接本地 CLI'} <span>↗</span>`;
@@ -361,7 +365,8 @@ function loadModel(project, modelKey, revision = null) {
   pendingRpc.clear();
   renderParts();
   renderSelection();
-  $('#geometryStats').innerHTML = '<span>正在载入模型…</span>';
+  $('#geometryStats').replaceChildren();
+  $('.stage').classList.toggle('is-loading', Boolean(project.modelUrl));
   for (const id of ['exportButton', 'resetViewButton', 'cameraViewSelect', 'wireButton', 'gridButton', 'animateButton', 'screenshotButton']) $(`#${id}`).disabled = true;
   if (!project.modelUrl) {
     state.iframe = null;
@@ -388,6 +393,7 @@ function syncCameraSelector() {
   const custom = select.querySelector('[value="custom"]');
   custom.hidden = Boolean(preset);
   select.value = preset ? view : 'custom';
+  selectMenus.get('cameraViewSelect').refresh();
 }
 
 function renderAnimationControl(available) {
@@ -437,6 +443,7 @@ window.addEventListener('message', event => {
   }
   if (data.type === 'ready') {
     state.ready = true;
+    $('.stage').classList.remove('is-loading');
     state.parts = data.parts || [];
     state.camera = data.camera;
     // A single-category model (for example, a lamp) should expose its parts immediately.
@@ -477,6 +484,7 @@ window.addEventListener('message', event => {
   } else if (data.type === 'error') {
     toast(data.message || '模型无法预览', true);
     if (!state.ready) {
+      $('.stage').classList.remove('is-loading');
       $('#geometryStats').innerHTML = '<span>模型预览失败</span>';
       void validateRevision(false, data.message);
     }
@@ -1110,7 +1118,7 @@ async function subscribe() {
   }
 }
 const elapsedTimer = setInterval(updateElapsed, 1000);
-window.addEventListener('pagehide', () => { stopped = true; eventController.abort(); clearTimeout(refreshTimer); clearInterval(elapsedTimer); creationParticles.destroy(); }, { once: true });
+window.addEventListener('pagehide', () => { stopped = true; eventController.abort(); clearTimeout(refreshTimer); clearInterval(elapsedTimer); creationParticles.destroy(); for (const menu of selectMenus.values()) menu.destroy(); }, { once: true });
 
 async function start() {
   try {
