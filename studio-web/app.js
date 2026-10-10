@@ -3,6 +3,7 @@ import { createCreationParticles } from './creation-particles.js';
 import { describeTask, elapsedLabel } from './task-status.js';
 import { createConversationImages } from './conversation-images.js';
 import { enhanceSelect } from './select-menu.js';
+import { createSkillInstallGuide } from './skill-install.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -827,6 +828,45 @@ async function copyProjectPath() {
   catch { toast('无法自动复制，可在“本地项目”窗口选中目录手动复制。', true); $('#workspacePath').textContent = value; showDialog('#projectInfoDialog'); }
 }
 
+function prepareSkillInstallGuide() {
+  const status = $('#skillInstallStatus');
+  status.textContent = '';
+  status.dataset.error = 'false';
+  $('#copySkillInstructions span').textContent = '复制 Agent 安装指令';
+  try {
+    const guide = createSkillInstallGuide({ origin: location.origin, skillUrl: state.skillUrl });
+    $('#skillInstallInstructions').value = guide.instructions;
+    $('#downloadSkill').href = guide.url;
+    $('#downloadSkill').removeAttribute('aria-disabled');
+    $('#copySkillInstructions').disabled = false;
+    return guide;
+  } catch (error) {
+    $('#skillInstallInstructions').value = '';
+    $('#downloadSkill').removeAttribute('href');
+    $('#downloadSkill').setAttribute('aria-disabled', 'true');
+    $('#copySkillInstructions').disabled = true;
+    status.dataset.error = 'true';
+    status.textContent = error.message;
+    return null;
+  }
+}
+
+async function copySkillInstructions() {
+  const guide = prepareSkillInstallGuide();
+  if (!guide) return;
+  try {
+    await navigator.clipboard.writeText(guide.instructions);
+    $('#copySkillInstructions span').textContent = '已复制';
+    $('#skillInstallStatus').textContent = '已复制，粘贴到本机 Agent 对话即可安装。';
+  } catch {
+    $('#skillInstallPreview').open = true;
+    $('#skillInstallInstructions').focus();
+    $('#skillInstallInstructions').select();
+    $('#skillInstallStatus').dataset.error = 'true';
+    $('#skillInstallStatus').textContent = '未能自动复制。指令已选中，请手动复制后发送给 Agent。';
+  }
+}
+
 $('#projectSelect').onchange = event => selectProject(event.target.value).catch(error => toast(error.message, true));
 $('#newProject').onclick = () => { showDialog('#newProjectDialog'); $('#projectNameInput').focus(); };
 $('#newProjectForm').onsubmit = async event => {
@@ -846,8 +886,8 @@ $('#newProjectForm').onsubmit = async event => {
 };
 $('#connectButton').onclick = () => { renderBridge(); showDialog('#connectDialog'); };
 $('#retryConnect').onclick = connect;
-$('#skillButton').onclick = () => showDialog('#skillDialog');
-$('#copyWorkspaceButton').onclick = copyProjectPath;
+$('#skillButton').onclick = () => { prepareSkillInstallGuide(); showDialog('#skillDialog'); };
+$('#copySkillInstructions').onclick = copySkillInstructions;
 $('#copyPathButton').onclick = copyProjectPath;
 $('#projectInfoButton').onclick = () => showDialog('#projectInfoDialog');
 $$('[data-close-dialog]').forEach(button => { button.onclick = () => button.closest('dialog').close(); });

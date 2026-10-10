@@ -1,9 +1,9 @@
 ---
 name: model-studio
-description: 为 Model Studio 的 Three.js 项目创建或修改可编辑三维模型。用户通过参考图、部件选择或自然语言提出建模要求时使用；适用于本地 model.js 工程，不负责安装连接器或自动绑定骨骼。
+description: 为造物 Studio 的 Three.js 项目创建或修改可编辑三维模型。用户通过参考图、部件选择或自然语言提出建模要求时使用；适用于本地 model.js 工程，不负责安装连接器或自动绑定骨骼。
 ---
 
-# Model Studio
+# 造物 SKILL
 
 把用户的建模意图落实到指定本地工程，让平台能重新加载、预览和保留修改版本。技能可以独立用于现有 Three.js 工程，不依赖平台专用 CLI。
 

@@ -2,6 +2,8 @@
 
 连接本地 Codex CLI 的 Three.js 建模工作台。上传参考图、直接开始建模，或用对话继续修改；在同一个界面预览几何、检查部件、浏览版本并导出 GLB。
 
+[图文介绍与实际模型截图](docs/share/README.md) · [分享封面与素材说明](docs/share/package-metadata.txt)
+
 **状态：v0.1.0，实验性本地应用。** 当前生成方式是让 Codex 编写 Three.js 几何代码，适合规则物体、建筑体块和参数化模型。它不包含图生 3D 模型权重，也不保证写实人物、复杂有机形体或照片级还原。
 
 ## 快速开始
@@ -88,13 +90,15 @@ STUDIO_PORT=4180 npm start
 
 ## Skill 与模型约定
 
-通过顶部“获取 Skill”下载，或执行：
+在顶部打开「造物 SKILL」，点击「复制 Agent 安装指令」，粘贴到本机 Codex、Claude Code 或其他支持 Skills 的 Agent 对话中，由 Agent 下载并安装。指令使用当前服务的实际地址，无需令牌；下载期间保持造物运行，该地址仅在本机可用。也可以点击「下载 ZIP」手动安装，或执行：
 
 ```sh
 npm run pack:skill
 ```
 
-输出为 `public-downloads/model-studio-skill.zip`。压缩包从 `studio-skill/model-studio/` 源码生成，不需要额外压缩工具；安装步骤见包内 `INSTALL.md`。Skill 提供建模指令，连接程序负责通信；下载 Skill 不会自动登录、安装或启动 Agent。
+输出为 `public-downloads/model-studio-skill.zip`，完整技能目录为 `model-studio/`。个人安装目录默认是 Codex 的 `~/.agents/skills/`、Claude Code 的 `~/.claude/skills/`；已有有效自定义目录时使用其实际配置。安装后，在 Codex 中使用 `$model-studio` 并提供工程目录、图片和要求；其他 Agent 使用各自的技能调用方式。完整步骤见 [INSTALL.md](studio-skill/model-studio/INSTALL.md)。
+
+平台新建的建模工程已自带项目级技能，使用内置 Codex 连接时无需额外安装。Skill 提供建模与校验规范，本地连接程序负责通信；下载或安装 Skill 不会自动登录、安装或启动 Agent，也不会自动开始建模。
 
 模型入口：
 

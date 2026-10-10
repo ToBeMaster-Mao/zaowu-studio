@@ -1,0 +1,15 @@
+标题：造物 Studio：把本地 Codex 接进三维建模工作台
+
+摘要：上传参考图，用对话生成和修改可编辑的 Three.js 模型。打通本地 Codex CLI，支持部件调整、版本回看和 GLB 导出；也可以安装造物 SKILL，在 Codex 或其他支持 Skills 的 Agent 中建模。
+
+推荐封面：assets/teapot-cover.jpg
+正文：README.md
+网页预览：index.html
+正文图片：assets/teapot-workspace.jpg、assets/canton-tower.jpg、assets/skill-install.jpg
+
+团队仓库：http://192.168.17.55:3001/3k-development/zaowu-studio
+GitHub：https://github.com/ToBeMaster-Mao/zaowu-studio
+
+发布方式：将标题、摘要、封面和正文复制到群智“分享”，按正文位置上传配图。本目录为分享素材，尚未自动发帖。群智不一定支持直接读取仓库相对路径，发布时请实际上传图片。
+
+访问说明：团队仓库需要内网访问；GitHub 当前为私有仓库。公开状态变化后可同步更新正文最后一段。

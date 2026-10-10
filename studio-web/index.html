@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="/studio-web/creator-panel.css">
   <link rel="stylesheet" href="/studio-web/display-settings.css">
   <link rel="stylesheet" href="/studio-web/topbar.css">
+  <link rel="stylesheet" href="/studio-web/skill-install.css">
   <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
 </head>
 <body>
@@ -109,7 +110,14 @@
 
   <dialog id="connectDialog" class="modal"><div class="modal-header"><h2>连接 Codex</h2><button class="icon-button" data-close-dialog aria-label="关闭连接窗口">×</button></div><div id="connectDetails"></div><div class="modal-actions"><button id="retryConnect" class="primary-button">连接本地 CLI</button></div></dialog>
   <dialog id="newProjectDialog" class="modal"><form id="newProjectForm"><div class="modal-header"><h2>新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭新建项目">×</button></div><label class="field-label" for="projectNameInput">项目名称</label><input id="projectNameInput" class="text-input" placeholder="例如：建筑模型" maxlength="80" required><label class="field-label" for="templateSelect">初始模型</label><select id="templateSelect" class="text-input"><option value="empty">空白项目</option><option value="airliner">客机示例</option></select><div class="modal-actions"><button type="submit" class="primary-button">创建项目</button></div></form></dialog>
-  <dialog id="skillDialog" class="modal"><div class="modal-header"><h2>安装造物 SKILL</h2><button class="icon-button" data-close-dialog aria-label="关闭 Skill 窗口">×</button></div><div class="skill-card"><div><strong>造物 SKILL</strong><p>Three.js 建模与模型校验</p></div></div><p class="modal-copy">将 ZIP 中的 <code>model-studio</code> 文件夹解压到项目的 <code>.agents/skills/</code> 目录，再重启本地 Agent。</p><div class="code-note"><span>创建 Skill 目录</span><code>mkdir .agents/skills</code></div><div class="modal-actions"><button id="copyWorkspaceButton" class="subtle-button">复制项目目录</button><a id="downloadSkill" class="primary-button" href="/downloads/model-studio-skill.zip" download>下载 Skill</a></div></dialog>
+  <dialog id="skillDialog" class="modal skill-install-modal" aria-labelledby="skillDialogTitle" aria-describedby="skillInstallIntro">
+    <div class="modal-header"><div class="skill-install-heading"><span class="skill-install-emblem"><img src="/studio-web/brand/logo-mark.svg" alt="" width="31" height="31"></span><div><h2 id="skillDialogTitle">安装造物 SKILL</h2><p>Codex · Claude Code · 其他 Agent</p></div></div><button type="button" class="icon-button" data-close-dialog aria-label="关闭 Skill 窗口">×</button></div>
+    <p id="skillInstallIntro" class="skill-install-intro">复制安装指令，发送给本机 Agent，让它完成安装。</p>
+    <div class="skill-install-actions"><button id="copySkillInstructions" type="button" class="primary-button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3"/></svg><span>复制 Agent 安装指令</span></button><a id="downloadSkill" class="subtle-button" href="/downloads/model-studio-skill.zip" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg>下载 ZIP</a></div>
+    <p class="skill-install-hint"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 4.7v.3"/></svg>下载期间请保持造物运行，安装指令仅适用于本机。</p>
+    <details id="skillInstallPreview" class="skill-install-preview"><summary>查看安装指令<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary><textarea id="skillInstallInstructions" readonly aria-label="Agent 安装指令" spellcheck="false"></textarea></details>
+    <p id="skillInstallStatus" class="skill-install-status" role="status" aria-live="polite"></p>
+  </dialog>
   <dialog id="projectInfoDialog" class="modal"><div class="modal-header"><h2>本地项目</h2><button class="icon-button" data-close-dialog aria-label="关闭项目信息">×</button></div><p class="modal-copy">建模源码、参考图片与版本记录都保存在这个目录。</p><code id="workspacePath" class="path-block"></code><div class="modal-actions"><button id="copyPathButton" class="primary-button">复制目录</button></div></dialog>
   <dialog id="attachmentPreviewDialog" class="modal attachment-preview-dialog"><div class="modal-header"><h2 id="attachmentPreviewCaption">参考图片</h2><button class="icon-button" data-close-dialog aria-label="关闭图片预览">×</button></div><img id="attachmentPreviewImage" alt="参考图片大图"></dialog>
   <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
