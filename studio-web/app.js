@@ -578,17 +578,17 @@ async function savePartOverride(partId, patch) {
 
 function renderVersions() {
   const versions = [...(state.project?.versions || [])].reverse();
-  $('#versionCount').textContent = versions.length || '';
+  $('#versionCount').textContent = `共 ${versions.length} 个版本`;
   const canPreview = !state.project?.pendingRevisionId && !state.savingParts && !state.restoringVersion && !state.taskSubmitting && !state.uploading;
   const canRestore = !localBusy() && !state.savingParts && !state.restoringVersion && !state.uploading;
-  $('#versionStatusNote').textContent = state.project?.pendingRevisionId ? '新版本正在校验，完成后可切换预览。' : localBusy() ? '任务进行中，可以预览历史版本；任务结束后可恢复。' : '预览只改变展示；恢复会将该版本设为当前工作版本。';
+  $('#versionStatusNote').textContent = state.project?.pendingRevisionId ? '新版本正在校验，完成后可预览。' : localBusy() ? '任务进行中，暂不可恢复版本。' : '';
   const tree = $('#versions'), scrollPane = $('#versionsPane'), scrollTop = scrollPane.scrollTop;
   const focusedId = tree.contains(document.activeElement) ? document.activeElement.dataset.preview || document.activeElement.dataset.restore : null;
   const focusedAction = document.activeElement?.dataset.preview ? 'preview' : 'restore';
   tree.innerHTML = versions.length ? versions.map(version => {
     const previewing = state.previewRevision?.id === version.id;
     const loading = state.previewLoadingId === version.id;
-    return `<article class="version-card ${version.isHead ? 'is-head' : ''} ${previewing ? 'is-previewing' : ''} ${version.status === 'invalid' ? 'invalid' : ''}"><div class="version-top"><span class="version-number">V${revisionNumber(version.id)}</span><strong>${escapeHtml(version.label || '模型版本')}</strong><div class="version-badges">${version.isHead ? '<span class="current-label">当前版本</span>' : ''}${previewing ? '<span class="preview-label">预览中</span>' : ''}</div></div><time>${escapeHtml(timeLabel(version.createdAt))} ${version.status === 'pending' ? '· 正在校验' : version.status === 'invalid' ? '· 校验未通过' : ''}</time>${version.status === 'valid' ? `<div class="version-actions"><button class="version-preview-button" data-preview="${escapeHtml(version.id)}" ${!canPreview || loading || previewing || (version.isHead && !state.previewRevision) ? 'disabled' : ''}>${loading ? '正在载入…' : previewing ? '正在预览' : version.isHead ? (state.previewRevision ? '返回当前版本' : '当前展示') : '预览此版本'}</button>${!version.isHead ? `<button data-restore="${escapeHtml(version.id)}" ${canRestore ? '' : 'disabled'} title="${canRestore ? '将此版本设为当前工作版本' : '请等待当前任务或操作结束'}">恢复此版本</button>` : ''}</div>` : ''}</article>`;
+    return `<article class="version-card ${version.isHead ? 'is-head' : ''} ${previewing ? 'is-previewing' : ''} ${version.status === 'invalid' ? 'invalid' : ''}"><div class="version-top"><span class="version-number">V${revisionNumber(version.id)}</span><strong>${escapeHtml(version.label || '模型版本')}</strong></div><div class="version-meta"><time>${escapeHtml(timeLabel(version.createdAt))} ${version.status === 'pending' ? '· 正在校验' : version.status === 'invalid' ? '· 校验未通过' : ''}</time><div class="version-badges">${version.isHead ? '<span class="current-label">当前版本</span>' : ''}${previewing ? '<span class="preview-label">预览中</span>' : ''}</div></div>${version.status === 'valid' ? `<div class="version-actions"><button class="version-preview-button" data-preview="${escapeHtml(version.id)}" ${!canPreview || loading || previewing || (version.isHead && !state.previewRevision) ? 'disabled' : ''}>${loading ? '正在载入…' : previewing ? '正在预览' : version.isHead ? (state.previewRevision ? '返回当前版本' : '当前展示') : '预览此版本'}</button>${!version.isHead ? `<button data-restore="${escapeHtml(version.id)}" ${canRestore ? '' : 'disabled'} title="${canRestore ? '将此版本设为当前工作版本' : '请等待当前任务或操作结束'}">恢复此版本</button>` : ''}</div>` : ''}</article>`;
   }).join('') : '<p class="empty-small">模型修改完成后，版本将显示在这里。</p>';
   scrollPane.scrollTop = scrollTop;
   $$('[data-preview]').forEach(button => { button.onclick = () => {

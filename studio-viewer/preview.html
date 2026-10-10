@@ -17,108 +17,67 @@
   <style>
 .orientation-control {
   position: absolute;
-  top: 18px;
+  top: 54px;
   right: 18px;
-  width: 118px;
-  color: #9ca69e;
-  background: #1d2326ed;
-  border: 1px solid #ffffff0d;
-  border-radius: 15px;
-  box-shadow: 0 5px 18px #00000014, inset 0 1px #ffffff03;
+  width: 112px;
+  height: 112px;
   user-select: none;
   -webkit-user-select: none;
+  pointer-events: none;
   z-index: 5;
 }
-.orientation-heading {
-  height: 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2px 5px 0 12px;
-  font-size: 11px;
-  letter-spacing: .08em;
-  color: #96a19b;
+.orientation-cube { display: block; width: 112px; height: 112px; overflow: visible; }
+.orientation-face {
+  --face-fill: #30363b;
+  --face-stroke: #616b72;
+  --face-text: #d2d8dc;
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
 }
-.orientation-control button {
+.orientation-face.face-side, .orientation-face.face-opposite-side { --face-fill: #292f34; }
+.orientation-face.face-top { --face-fill: #414b36; --face-stroke: #8da66b; --face-text: #d6e8b9; }
+.orientation-face.face-bottom { --face-fill: #252b2f; }
+.orientation-face polygon {
+  fill: var(--face-fill);
+  stroke: var(--face-stroke);
+  stroke-width: 1.15;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: fill .14s, stroke .14s;
+}
+.orientation-face text { fill: var(--face-text); font-size: 13px; font-weight: 500; pointer-events: none; }
+.orientation-face:hover polygon, .orientation-face:focus-visible polygon { fill: #46533b; stroke: #c5df9b; stroke-width: 1.5; }
+.orientation-face:hover text, .orientation-face:focus-visible text { fill: #e0f2c3; }
+.orientation-face.is-aligned polygon { stroke: #a8c37f; }
+.orientation-face:focus-visible polygon { stroke-width: 2; }
+.orientation-reset {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   appearance: none;
   -webkit-appearance: none;
-  border: 0;
-  font: inherit;
+  border: 1px solid #3b434a;
+  border-radius: 50%;
+  background: #20262bdd;
+  color: #aab3bb;
+  pointer-events: auto;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  transition: color .14s, background .14s, border-color .14s;
 }
-.orientation-control button:focus-visible { outline: 2px solid #d1eb9b; outline-offset: 2px; }
-.orientation-reset {
-  display: grid;
-  place-items: center;
-  height: 30px;
-  width: 30px;
-  border-radius: 8px;
-  background: transparent;
-  color: #9da99f;
-}
-.orientation-reset:hover { color: #d1eb9b; background: #d1eb9b0d; }
-.orientation-reset svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.orientation-compass { position: relative; width: 116px; height: 106px; }
-.orientation-lines { position: absolute; inset: 0; width: 116px; height: 106px; pointer-events: none; }
-.orientation-orbit { fill: none; stroke: #92a69e13; stroke-width: 1; }
-.orientation-origin { fill: #a3b1a8; }
-.orientation-ray { stroke: var(--axis-color); stroke-width: 1.2; }
-.axis-x { --axis-color: #d99895; --axis-fill: #413234; }
-.axis-y { --axis-color: #b2cd8f; --axis-fill: #343e2d; }
-.axis-z { --axis-color: #8cadd8; --axis-fill: #2d3848; }
-.orientation-axis {
-  position: absolute;
-  left: -16px;
-  top: -16px;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  background: transparent;
-  border-radius: 50%;
-  color: var(--axis-color);
-}
-.orientation-axis span {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  background: var(--axis-fill);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: -.02em;
-  box-shadow: 0 2px 6px #0000001a;
-  transition: filter .12s, box-shadow .12s;
-}
-.orientation-axis.is-negative span { width: 22px; height: 22px; font-size: 11px; background: #222a2b; }
-.orientation-axis.is-back { opacity: .66; }
-.orientation-axis:hover { opacity: 1; z-index: 30 !important; }
-.orientation-axis:hover span { filter: brightness(1.3); box-shadow: 0 0 0 3px #d1eb9b12; }
-.orientation-axis.is-aligned span { box-shadow: 0 0 0 3px #d1eb9b1b; }
-.orientation-shortcuts {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
-  padding: 0 7px 7px;
-}
-.orientation-shortcuts button {
-  min-width: 30px;
-  height: 29px;
-  border-radius: 6px;
-  background: #ffffff03;
-  color: #8f9b94;
-  font-size: 11px;
-}
-.orientation-shortcuts button:hover, .orientation-shortcuts button.active { background: #d1eb9b12; color: #d1eb9b; }
+.orientation-reset:hover { color: #d6e9b5; border-color: #778962; background: #2a3325; }
+.orientation-reset:focus-visible { outline: 2px solid #c5df9b; outline-offset: 3px; }
+.orientation-reset svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 520px) {
-  .orientation-control { top: 12px; right: 12px; }
+  .orientation-control { right: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .orientation-axis span { transition: none; }
+  .orientation-face polygon, .orientation-reset { transition: none; }
 }
 
   </style>

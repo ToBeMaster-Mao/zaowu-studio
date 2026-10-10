@@ -59,7 +59,7 @@
       </section>
 
       <aside class="right-panel" id="rightPanel" aria-label="模型检查器">
-        <div class="inspector-tabs" role="tablist" aria-label="模型检查器"><button role="tab" aria-selected="true" aria-controls="partsPane" data-tab="parts">部件</button><button role="tab" aria-selected="false" aria-controls="propertiesPane" data-tab="properties">属性</button><button role="tab" aria-selected="false" aria-controls="versionsPane" data-tab="versions">版本 <span id="versionCount"></span></button><button class="right-close" data-close-panel="right" aria-label="收起部件面板">×</button></div>
+        <div class="inspector-tabs" role="tablist" aria-label="模型检查器"><button role="tab" aria-selected="true" aria-controls="partsPane" data-tab="parts">部件</button><button role="tab" aria-selected="false" aria-controls="propertiesPane" data-tab="properties">属性</button><button role="tab" aria-selected="false" aria-controls="versionsPane" data-tab="versions">版本</button><button class="right-close" data-close-panel="right" aria-label="收起部件面板">×</button></div>
         <section id="partsPane" class="inspector-pane" role="tabpanel">
           <label class="part-search"><svg class="inspector-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="partSearch" placeholder="搜索部件…" aria-label="搜索模型部件"><kbd>Ctrl K</kbd></label>
           <div class="scene-summary"><div class="scene-description"><strong id="sceneProjectName">我的模型</strong><span id="partCount">等待模型载入</span></div><button id="collapseParts" class="panel-icon-button" aria-label="收起全部分组" title="收起全部分组"><svg class="inspector-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7 4-4 4 4M8 17l4 4 4-4M4 12h16"/></svg></button></div>
@@ -67,7 +67,7 @@
           <div id="selectionSummary" class="selection-summary"><div class="selection-empty"><strong>未选择部件</strong><p>在模型或列表中选择部件。</p></div></div>
         </section>
         <section id="propertiesPane" class="inspector-pane" role="tabpanel" hidden><div id="properties"></div></section>
-        <section id="versionsPane" class="inspector-pane" role="tabpanel" hidden><div class="versions-heading"><h2>版本记录</h2><p id="versionStatusNote"></p></div><div id="versions"></div></section>
+        <section id="versionsPane" class="inspector-pane" role="tabpanel" aria-label="版本" hidden><div class="versions-toolbar"><span id="versionCount"></span></div><p id="versionStatusNote" role="status"></p><div id="versions"></div></section>
       </aside>
     </main>
   </div>

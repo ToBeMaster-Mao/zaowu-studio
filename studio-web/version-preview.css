@@ -86,8 +86,23 @@
   top: calc(var(--version-preview-bottom) + 8px);
 }
 
+#rightPanel .versions-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 43px;
+  padding: 12px 16px 10px;
+}
+
+#rightPanel #versionCount {
+  color: #95a1af;
+  font-size: 12px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
 #rightPanel #versionStatusNote {
-  margin-top: 10px;
+  margin: 0 16px 12px;
   color: #9ba991;
   font-size: 12px;
   line-height: 1.7;
@@ -118,24 +133,15 @@
 }
 
 #rightPanel #versions .version-top {
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 6px 8px;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
   margin-bottom: 8px;
-}
-
-#rightPanel #versions .version-dot {
-  flex: none;
-  margin-top: 6px;
-}
-
-#rightPanel #versions .version-card.is-previewing .version-dot {
-  background: var(--lime);
 }
 
 #rightPanel #versions .version-card strong {
   min-width: 0;
-  flex: 1 1 140px;
   font-size: 13px;
   font-weight: 500;
   color: #ced7e1;
@@ -148,8 +154,8 @@
 }
 
 #rightPanel #versions .version-number {
-  color: #8896a5;
-  font-size: 11px;
+  color: #95a1af;
+  font-size: 13px;
   font-weight: 450;
   font-variant-numeric: tabular-nums;
   line-height: 1.65;
@@ -163,6 +169,8 @@
   gap: 5px;
   margin-left: auto;
 }
+
+#rightPanel #versions .version-badges:empty { display: none; }
 
 #rightPanel #versions .version-badges .current-label,
 #rightPanel #versions .version-badges .preview-label {
@@ -186,10 +194,18 @@
   background: #d3f28a0a;
 }
 
+#rightPanel #versions .version-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-bottom: 12px;
+}
+
 #rightPanel #versions .version-card time {
-  margin: 0 0 11px;
-  color: #8391a0;
-  font-size: 11px;
+  margin: 0;
+  color: #95a1af;
+  font-size: 12px;
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
 }
