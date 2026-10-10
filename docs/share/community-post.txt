@@ -1,0 +1,15 @@
+【群智分享 · 发帖草稿 d65cbd0】以「zheming」的名义发到「分享」
+
+标题：造物 Studio 建模实践
+一句话：参考图建模与部件修改，连接本地 Codex CLI。
+分类：经验
+仓库：3k-development/zaowu-studio
+封面：/workspace/codex-share/zaowu-studio-20261010/cover.png（1.8 MB）
+HTML 正文：/workspace/codex-share/zaowu-studio-20261010/造物Studio建模实践.html（2.6 MB）——帖子里直接显示这个网页（在隔离的小窗里跑，碰不到看帖人的电脑和群智）
+我为什么做这个：（空着）
+
+发布结果：已发布
+帖子编号：20261010-e419e9
+位置：群智 → 团队 → 分享
+发布工具：community-post Skill / qunzhi_community_submit
+发布日期：2026-10-10

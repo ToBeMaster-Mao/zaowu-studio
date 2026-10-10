@@ -1,0 +1,7 @@
+工具：内置 image_gen（生成概念封面，不作为实际模型效果证明）。
+用途：群智分享卡片与 HTML 正文封面。
+输出：assets/cover-generated.png
+
+Use case: ads-marketing. Asset type: horizontal editorial cover for a Chinese internal-team article about 造物 Studio, a local Codex and Three.js modeling workbench.
+Create a polished 16:9 landscape cover, an editorial conceptual illustration rather than a fake software screenshot. Restrained modern product design: charcoal black background, warm ivory typography, a small amount of pale lime green matching a 3D modeling workspace brand. Large clear title on the left reading exactly "造物 Studio". One smaller line exactly "从参考图到可编辑模型". No other wording.
+On the right, arrange a warm matte clay teapot with a separately hovering lid, a slender Canton Tower lattice model behind it, and one small potted tree, in a precise isometric studio still life. Transition a small part of the objects into fine wireframe construction lines to express editable geometry. Use soft studio lighting and realistic material depth, restrained shadows, tasteful negative space. Objects must be visibly modeled rather than real-world photographs; no robot, brain, glowing AI head, neon cyberpunk, dashboards, fake numeric metrics, floating business buzzwords, watermarks or extra logos. Keep title and subject readable at small card size. The cover is a concept illustration; actual product screenshots will be shown separately in the article.

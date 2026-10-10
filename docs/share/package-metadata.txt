@@ -1,15 +1,26 @@
-标题：造物 Studio：把本地 Codex 接进三维建模工作台
+标题：造物 Studio 建模实践
 
-摘要：上传参考图，用对话生成和修改可编辑的 Three.js 模型。打通本地 Codex CLI，支持部件调整、版本回看和 GLB 导出；也可以安装造物 SKILL，在 Codex 或其他支持 Skills 的 Agent 中建模。
+摘要：把本地 Codex CLI 接进三维工作台，上传参考图生成模型，再按部件继续修改。附茶壶与广州塔的真实效果、造物 SKILL 安装用法、Agent 到模型预览的内部工作流，以及团队仓库和 GitHub 源码。
 
-推荐封面：assets/teapot-cover.jpg
-正文：README.md
-网页预览：index.html
-正文图片：assets/teapot-workspace.jpg、assets/canton-tower.jpg、assets/skill-install.jpg
+分类：经验、网页
+封面：assets/cover-generated.png
+正文格式：HTML
+正文：index.html
+正文图片：assets/teapot-cover.jpg、assets/teapot-workspace.jpg、assets/canton-tower.jpg、assets/skill-install.jpg
 
 团队仓库：http://192.168.17.55:3001/3k-development/zaowu-studio
 GitHub：https://github.com/ToBeMaster-Mao/zaowu-studio
+实现依据固定提交：1db5ff49c1946a65b05d145e4741acb753461933
 
-发布方式：将标题、摘要、封面和正文复制到群智“分享”，按正文位置上传配图。本目录为分享素材，尚未自动发帖。群智不一定支持直接读取仓库相对路径，发布时请实际上传图片。
+封面说明：使用内置生图工具生成的概念封面，不作为模型效果证明。
+效果说明：正文茶壶与广州塔图片来自实际工作台，统计来自对应截图。
+验证记录：该提交下 48 个 JavaScript 文件通过语法检查；自动测试 92 项通过，1 项真实 Codex 联动测试跳过。
 
-访问说明：团队仓库需要内网访问；GitHub 当前为私有仓库。公开状态变化后可同步更新正文最后一段。
+发布结果：已通过群智 community-post Skill 发布到“团队 → 分享”。
+帖子编号：20261010-e419e9
+署名：zheming
+发布版：exports/zaowu-studio-share.html（仓库根目录；全部图片已嵌入）
+重建命令：node scripts/pack-share.mjs
+封面提示词：cover-prompt.txt
+发布回执：community-post.txt
+访问说明：团队仓库需要内网与团队权限；GitHub 当前需要仓库访问权限。
