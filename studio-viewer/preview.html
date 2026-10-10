@@ -7,11 +7,13 @@
   <style>
     :root{color-scheme:dark;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif}
     *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#16191d}
-    #viewport{position:absolute;inset:0;outline:none}canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
-    #notice{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;color:#a2abb8;font-size:12px;gap:14px;padding:30px;line-height:1.7}
-    #notice[hidden]{display:none}.spinner{height:24px;width:24px;border:2px solid #343b43;border-top-color:#c4eb7b;border-radius:50%;margin:auto;animation:spin .85s linear infinite}
-    #notice.error{background:#16191def;color:#efb4a6}#notice.error .spinner{display:none}#notice-text{max-width:460px;overflow-wrap:anywhere}
-    @keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+    #viewport{position:absolute;inset:0;outline:none}#viewport canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+    #notice{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;pointer-events:none;color:#a2abb8;font-size:13px;gap:8px;padding:24px;line-height:1.7}
+    #notice[hidden]{display:none}#notice.error{background:#16191def;color:#efb4a6}#notice.error .loading-logo{display:none}#notice-text{max-width:460px;overflow-wrap:anywhere}
+    .loading-logo{position:relative;width:min(280px,70vw);height:200px;margin-top:-42px}
+    .loading-logo canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0}
+    .loading-logo img{position:absolute;width:106px;height:106px;max-width:42%;max-height:53%;inset:0;margin:auto}
+    .loading-logo.is-animated canvas{opacity:1}.loading-logo.is-animated img{visibility:hidden}
   </style>
   <style>
 .orientation-control {
@@ -69,7 +71,8 @@
 </head>
 <body>
   <div id="viewport" aria-label="可旋转、缩放并点选部件的三维模型视口"></div>
-  <div id="notice" role="status"><div class="spinner"></div><div id="notice-text">正在载入三维模型…</div></div>
+  <div id="notice" role="status"><div id="loading-logo" class="loading-logo" aria-hidden="true"><img src="/studio-web/brand/logo-mark.svg" alt="" width="106" height="106"><canvas id="loading-particles"></canvas></div><div id="notice-text">正在载入模型…</div></div>
+  <script type="module" src="/studio-viewer/loading-logo.js"></script>
   <script type="module" src="/studio-viewer/viewport.js"></script>
 </body>
 </html>

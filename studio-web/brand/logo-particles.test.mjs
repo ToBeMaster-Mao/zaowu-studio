@@ -1,0 +1,97 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createLogoParticles } from './logo-particles.js';
+
+function environment(t, reduced = false) {
+  class Target {
+    listeners = new Map();
+    addEventListener(type, callback) { this.listeners.set(type, callback); }
+    removeEventListener(type) { this.listeners.delete(type); }
+    emit(type) { this.listeners.get(type)?.(); }
+  }
+  const media = Object.assign(new Target(), { matches: reduced });
+  const frames = new Map();
+  let nextFrame = 0, observer;
+  const context = {
+    clears: 0, paths: 0,
+    save() {}, restore() {}, translate() {}, scale() {}, setTransform() {}, beginPath() {}, arc() {},
+    fill(path) { if (path) this.paths++; },
+    clearRect() { this.clears++; },
+    getImageData() { return { data: new Uint8ClampedArray(128 * 128 * 4).fill(255) }; },
+  };
+  class Canvas {
+    width = 300;
+    height = 150;
+    parentElement = { getBoundingClientRect: () => ({ width: 280, height: 200 }) };
+    getContext() { return context; }
+  }
+  class Observer {
+    constructor(callback) { this.callback = callback; observer = this; }
+    observe() { this.connected = true; }
+    disconnect() { this.connected = false; }
+  }
+  const doc = Object.assign(new Target(), { hidden: false, createElement: () => new Canvas() });
+  const win = Object.assign(new Target(), { devicePixelRatio: 3, matchMedia: () => media });
+  const globals = {
+    HTMLCanvasElement: Canvas, Path2D: class {}, ResizeObserver: Observer, document: doc, window: win,
+    requestAnimationFrame(callback) { const id = ++nextFrame; frames.set(id, callback); return id; },
+    cancelAnimationFrame(id) { frames.delete(id); },
+  };
+  const previous = Object.fromEntries(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  for (const [key, value] of Object.entries(globals)) Object.defineProperty(globalThis, key, { value, writable: true, configurable: true });
+  t.after(() => {
+    for (const [key, descriptor] of Object.entries(previous)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+  return { canvas: new Canvas(), context, media, doc, win, frames, get observer() { return observer; } };
+}
+
+test('stopping and destroying the logo releases frames, listeners, observers and bitmap memory', t => {
+  const env = environment(t);
+  const logo = createLogoParticles(env.canvas);
+  logo.setActive(true);
+  assert.equal(env.frames.size, 1);
+  assert.equal(env.canvas.width, 560, 'DPR is capped at two');
+  assert.equal(env.observer.connected, true);
+  logo.setActive(false);
+  assert.equal(env.frames.size, 0);
+  assert.equal(env.observer.connected, false);
+  assert.equal(env.doc.listeners.size + env.win.listeners.size + env.media.listeners.size, 0);
+  assert.equal(env.canvas.width * env.canvas.height, 1);
+  logo.setActive(true);
+  assert.equal(env.frames.size, 1, 'a later task can start the same component');
+  logo.destroy();
+  logo.setActive(true);
+  assert.equal(env.frames.size, 0, 'a disposed component cannot restart');
+});
+
+test('hidden tabs suspend the animation and resume with only one frame scheduled', t => {
+  const env = environment(t);
+  const logo = createLogoParticles(env.canvas);
+  logo.setActive(true);
+  env.doc.hidden = true;
+  env.doc.emit('visibilitychange');
+  assert.equal(env.frames.size, 0);
+  env.doc.hidden = false;
+  env.doc.emit('visibilitychange');
+  env.observer.callback();
+  assert.equal(env.frames.size, 1);
+  logo.destroy();
+});
+
+test('reduced motion renders a static logo and changing the preference cancels animation', t => {
+  const env = environment(t, true);
+  const logo = createLogoParticles(env.canvas);
+  logo.setActive(true);
+  assert.equal(env.frames.size, 0);
+  assert.ok(env.context.paths >= 4, 'the vector logo is painted');
+  env.media.matches = false;
+  env.media.emit('change');
+  assert.equal(env.frames.size, 1);
+  env.media.matches = true;
+  env.media.emit('change');
+  assert.equal(env.frames.size, 0);
+  logo.destroy();
+});

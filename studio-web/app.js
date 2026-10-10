@@ -76,6 +76,24 @@ function toast(message, error = false) {
   setTimeout(() => node.remove(), error ? 8000 : 4200);
 }
 
+function syncPanelControls() {
+  for (const [side, name] of [['left', '创作助手'], ['right', '部件面板']]) {
+    const open = getComputedStyle($(`#${side}Panel`)).display !== 'none';
+    const button = $(side === 'left' ? '#toggleLeft' : '#toggleRight');
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-label', `${open ? '收起' : '展开'}${name}`);
+    button.title = `${open ? '收起' : '展开'}${name}`;
+  }
+}
+
+function setPanelOpen(side, open) {
+  const app = $('#app');
+  const drawer = window.innerWidth <= (side === 'left' ? 690 : 980);
+  app.classList.toggle(`${side}-open`, drawer && open);
+  app.classList.toggle(`${side}-hidden`, !drawer && !open);
+  syncPanelControls();
+}
+
 async function api(url, options = {}) {
   const response = await fetch(url, {
     ...options,
@@ -578,7 +596,7 @@ function renderSelection() {
   }; });
   $('#askAboutPart').onclick = () => {
     if (viewingHistory()) return;
-    if (window.innerWidth <= 690) $('#app').classList.add('left-open'); else $('#app').classList.remove('left-hidden');
+    setPanelOpen('left', true);
     $('#promptInput').focus();
   };
   if (viewingHistory()) {
@@ -926,8 +944,7 @@ async function stopTask() {
 }
 for (const id of ['stopButton', 'taskCardStop', 'overlayStopButton']) $(`#${id}`).onclick = stopTask;
 $('#overlayApprovalButton').onclick = () => {
-  $('#app').classList.remove('left-hidden');
-  if (window.innerWidth <= 690) $('#app').classList.add('left-open');
+  setPanelOpen('left', true);
   $('#approvalPanel').scrollIntoView({ block: 'nearest' });
   $('#approvalPanel button')?.focus();
 };
@@ -978,24 +995,20 @@ $('#collapseParts').onclick = () => {
   renderParts();
 };
 $$('[data-tab]').forEach(button => { button.onclick = () => setTab(button.dataset.tab); });
-$('#toggleLeft').onclick = () => {
-  const app = $('#app');
-  app.classList.toggle(window.innerWidth <= 690 ? 'left-open' : 'left-hidden');
-};
-$('#toggleRight').onclick = () => {
-  const app = $('#app');
-  app.classList.toggle(window.innerWidth <= 980 ? 'right-open' : 'right-hidden');
-};
+for (const side of ['left', 'right']) {
+  $(side === 'left' ? '#toggleLeft' : '#toggleRight').onclick = () => setPanelOpen(side, getComputedStyle($(`#${side}Panel`)).display === 'none');
+}
 $('#resetViewButton').onclick = () => { if (state.ready) viewerCommand('view', { view: 'perspective' }); };
-$$('[data-close-panel]').forEach(button => { button.onclick = () => { $('#app').classList.remove(`${button.dataset.closePanel}-open`); }; });
+$$('[data-close-panel]').forEach(button => { button.onclick = () => setPanelOpen(button.dataset.closePanel, false); });
+window.addEventListener('resize', syncPanelControls);
+syncPanelControls();
 window.addEventListener('keydown', event => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
     event.preventDefault();
-    $('#app').classList.remove('right-hidden');
-    if (window.innerWidth <= 980) $('#app').classList.add('right-open');
+    setPanelOpen('right', true);
     setTab('parts'); $('#partSearch').focus();
   }
-  if (event.key === 'Escape' && !$$('dialog[open]').length) { $('#app').classList.remove('left-open', 'right-open'); }
+  if (event.key === 'Escape' && !$$('dialog[open]').length) { $('#app').classList.remove('left-open', 'right-open'); syncPanelControls(); }
 });
 
 function processEvent(data) {
@@ -1038,7 +1051,7 @@ function processEvent(data) {
       renderMessages(); renderTask();
     } else if (event.type === 'approval') {
       state.approvals.set(event.requestId, event); renderApprovals(); renderTask();
-      if (window.innerWidth <= 690) $('#app').classList.add('left-open');
+      if (window.innerWidth <= 690) setPanelOpen('left', true);
     } else if (event.type === 'tool') {
       state.lastActivityAt = Date.now();
       state.activity = event.status === 'inProgress' ? '正在构建与检查模型' : '已完成一个处理步骤，继续创作中';

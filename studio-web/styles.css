@@ -69,3 +69,10 @@
 .stage-top .stage-action-button { display: grid; place-items: center; flex: none; width: 32px; min-width: 32px; height: 32px; padding: 6px; border: 1px solid #ffffff10; border-radius: 7px; color: #a4afb8; background: #1c2227; }
 .stage-top .stage-action-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
 .stage-top .stage-action-button:hover:not(:disabled) { color: #d8e8be; border-color: #d3f28a40; background: #283026; }
+
+/* Collapsing a panel must not auto-place the viewport in its zero-width track. */
+.app { grid-template-columns: minmax(0, 1fr); }
+.workspace > #leftPanel { grid-column: 1; grid-row: 1; }
+.workspace > .stage { grid-column: 2; grid-row: 1; min-width: 0; }
+.workspace > #rightPanel { grid-column: 3; grid-row: 1; }
+.workspace { grid-template-rows: minmax(0, 1fr); }

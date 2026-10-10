@@ -14,6 +14,7 @@ const base = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const port = 4176;
 const origin = `http://127.0.0.1:${port}`;
 const token = 'fixture-test';
+const modelDelayMs = Math.max(0, Math.min(30000, Number(process.env.STUDIO_FIXTURE_MODEL_DELAY_MS) || 0));
 const now = () => new Date().toISOString();
 const clients = new Set();
 const projects = new Map();
@@ -244,6 +245,8 @@ const server = http.createServer(async (req, res) => {
       if (!project) throw new Error('临时项目不存在。');
       res.setHeader('Access-Control-Allow-Origin', '*');
       if (artifact[2] === 'model.js') {
+        // Optional delay exercises the real loading UI without a live Agent or project.
+        if (modelDelayMs) await new Promise(resolve => setTimeout(resolve, modelDelayMs));
         res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(modelSource(url.searchParams.get('version') || project.headId));
       } else {
