@@ -56,11 +56,38 @@ export function projectOrientationCube(cameraQuaternion, vertices, normals, inve
   return vertices;
 }
 
+/** Place readable labels around true projected endpoints, including end-on axes. */
+export function layoutOrientationAxisLabels(normals) {
+  const placed = [];
+  for (const index of [0, 2, 4]) {
+    const normal = normals[index];
+    const x = 56 + normal.x * 23, y = 32 - normal.y * 23;
+    const length = Math.hypot(normal.x, normal.y);
+    const angle = length > .15 ? Math.atan2(-normal.y, normal.x) : -Math.PI / 4;
+    let label;
+    for (const radius of [12, 21, 29]) {
+      for (const offset of [0, Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2, Math.PI, Math.PI * .75, -Math.PI * .75]) {
+        const candidate = {
+          x: Math.max(10, Math.min(102, x + Math.cos(angle + offset) * radius)),
+          y: Math.max(9, Math.min(57, y + Math.sin(angle + offset) * radius)),
+        };
+        if (placed.every(other => Math.abs(other.label.x - candidate.x) >= 19 || Math.abs(other.label.y - candidate.y) >= 17)) {
+          label = candidate;
+          break;
+        }
+      }
+      if (label) break;
+    }
+    placed.push({ index, x, y, length, label });
+  }
+  return placed;
+}
+
 export function createOrientationControl({ camera, container = document.body, onView }) {
   const element = document.createElement('section');
   element.className = 'orientation-control';
   element.setAttribute('aria-label', '三维视角控制');
-  element.innerHTML = `<svg class="orientation-cube" viewBox="0 0 112 112" role="group" aria-label="点击立方体的面切换视角；复位可返回透视视角"></svg><button class="orientation-reset" type="button" aria-label="复位到透视视角" title="复位到透视视角"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.1 7.2A6.1 6.1 0 1 1 4 12.5M4 3.7v3.8h3.8"/></svg></button>`;
+  element.innerHTML = `<svg class="orientation-cube" viewBox="0 0 112 112" role="group" aria-label="点击立方体的面切换视角"></svg><svg class="orientation-axes" viewBox="0 0 112 66" role="img" aria-label="随视角旋转的 X、Y、Z 坐标轴"></svg>`;
   const cube = element.querySelector('.orientation-cube');
   const namespace = 'http://www.w3.org/2000/svg';
   const nodes = orientationFaces.map(face => {
@@ -82,10 +109,28 @@ export function createOrientationControl({ camera, container = document.body, on
     cube.appendChild(button);
     return { button, polygon, text, face };
   });
+  const axes = element.querySelector('.orientation-axes');
+  const axisNodes = [0, 2, 4].map(index => {
+    const group = document.createElementNS(namespace, 'g');
+    group.classList.add('orientation-axis', `axis-${orientationAxes[index].axis}`);
+    const line = document.createElementNS(namespace, 'path');
+    line.classList.add('orientation-axis-line');
+    const endpoint = document.createElementNS(namespace, 'path');
+    endpoint.classList.add('orientation-axis-endpoint');
+    const leader = document.createElementNS(namespace, 'path');
+    leader.classList.add('orientation-axis-leader');
+    const text = document.createElementNS(namespace, 'text');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'central');
+    text.textContent = orientationAxes[index].label;
+    group.append(line, endpoint, leader, text);
+    axes.appendChild(group);
+    return { group, line, endpoint, leader, text };
+  });
   const onClick = event => {
-    const button = event.target.closest('[data-view], .orientation-reset');
+    const button = event.target.closest('[data-view]');
     if (!button || !element.contains(button)) return;
-    onView(button.classList.contains('orientation-reset') ? 'perspective' : button.dataset.view);
+    onView(button.dataset.view);
   };
   const onKeyDown = event => {
     const button = event.target.closest('.orientation-face');
@@ -126,6 +171,26 @@ export function createOrientationControl({ camera, container = document.body, on
       // Edge-on faces remain clickable without cramming text into a sliver.
       text.style.opacity = normal.z > .2 ? '1' : '0';
     }
+    layoutOrientationAxisLabels(projected).forEach(({ index, x, y, length, label }, i) => {
+      const { group, line, endpoint, leader, text } = axisNodes[i];
+      const normal = projected[index];
+      group.style.opacity = normal.z < -.15 ? '.68' : '1';
+      line.setAttribute('d', `M56 32L${x.toFixed(2)} ${y.toFixed(2)}`);
+      if (length > .15) {
+        const dx = normal.x / length, dy = -normal.y / length;
+        endpoint.setAttribute('d', `M${x - dx * 4 - dy * 2.4} ${y - dy * 4 + dx * 2.4}L${x} ${y}L${x - dx * 4 + dy * 2.4} ${y - dy * 4 - dx * 2.4}`);
+      } else {
+        // A dot means toward the viewer; a cross means away from the viewer.
+        endpoint.setAttribute('d', normal.z > 0
+          ? `M${x - 2.6} ${y}a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0M${x - .25} ${y}h.5`
+          : `M${x - 2.4} ${y - 2.4}l4.8 4.8m-4.8 0l4.8 -4.8`);
+      }
+      text.setAttribute('x', label.x.toFixed(2));
+      text.setAttribute('y', label.y.toFixed(2));
+      const labelDistance = Math.hypot(label.x - x, label.y - y);
+      const leaderScale = Math.max(0, (labelDistance - 8) / labelDistance);
+      leader.setAttribute('d', labelDistance > 15 ? `M${x} ${y}l${(label.x - x) * leaderScale} ${(label.y - y) * leaderScale}` : '');
+    });
   }
   update();
   return {

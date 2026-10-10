@@ -20,7 +20,7 @@
   top: 54px;
   right: 18px;
   width: 112px;
-  height: 112px;
+  height: 165px;
   user-select: none;
   -webkit-user-select: none;
   pointer-events: none;
@@ -51,33 +51,18 @@
 .orientation-face:hover text, .orientation-face:focus-visible text { fill: #e0f2c3; }
 .orientation-face.is-aligned polygon { stroke: #a8c37f; }
 .orientation-face:focus-visible polygon { stroke-width: 2; }
-.orientation-reset {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 1px solid #3b434a;
-  border-radius: 50%;
-  background: #20262bdd;
-  color: #aab3bb;
-  pointer-events: auto;
-  cursor: pointer;
-  transition: color .14s, background .14s, border-color .14s;
-}
-.orientation-reset:hover { color: #d6e9b5; border-color: #778962; background: #2a3325; }
-.orientation-reset:focus-visible { outline: 2px solid #c5df9b; outline-offset: 3px; }
-.orientation-reset svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.orientation-axes { position: absolute; top: 97px; left: 0; width: 112px; height: 66px; overflow: visible; pointer-events: none; }
+.orientation-axis.axis-x { color: #d98984; }
+.orientation-axis.axis-y { color: #bfd982; }
+.orientation-axis.axis-z { color: #82b4d6; }
+.orientation-axis path { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.orientation-axis text { fill: currentColor; font-size: 12px; font-weight: 600; }
+.orientation-axis .orientation-axis-leader { opacity: .55; stroke-width: 1; stroke-dasharray: 1.5 2; }
 @media (max-width: 520px) {
   .orientation-control { right: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .orientation-face polygon, .orientation-reset { transition: none; }
+  .orientation-face polygon { transition: none; }
 }
 
   </style>

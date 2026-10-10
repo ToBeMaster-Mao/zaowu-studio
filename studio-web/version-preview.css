@@ -172,7 +172,6 @@
 
 #rightPanel #versions .version-badges:empty { display: none; }
 
-#rightPanel #versions .version-badges .current-label,
 #rightPanel #versions .version-badges .preview-label {
   display: inline-flex;
   align-items: center;

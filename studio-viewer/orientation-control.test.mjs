@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { orientationAxes, orientationCubeVertices, orientationFaces, projectOrientation, projectOrientationCube, viewDirections } from './orientation-control.js';
+import { orientationAxes, orientationCubeVertices, orientationFaces, projectOrientation, projectOrientationCube, layoutOrientationAxisLabels, viewDirections } from './orientation-control.js';
 
 test('the six selectable directions match the modeling contract and face the camera', () => {
   const camera = new THREE.PerspectiveCamera();
@@ -72,4 +72,38 @@ test('cube projection shows the expected faces at perspective and each aligned v
     assert.ok(center.distanceTo(normals[orientationFaces.indexOf(face)]) < 1e-10);
   }
   vertices.forEach((vector, index) => assert.strictEqual(vector, originalVertices[index]));
+});
+
+test('axis labels stay separate and inside the widget through rotations and end-on views', () => {
+  const camera = new THREE.PerspectiveCamera();
+  const normals = orientationAxes.map(() => new THREE.Vector3());
+  const check = () => {
+    projectOrientation(camera.quaternion, normals);
+    const positions = layoutOrientationAxisLabels(normals);
+    assert.deepEqual(positions.map(point => orientationAxes[point.index].label), ['X', 'Y', 'Z']);
+    for (let i = 0; i < positions.length; i++) {
+      const point = positions[i];
+      assert.equal(point.x, 56 + normals[point.index].x * 23, 'the axis endpoint keeps its real projected position');
+      assert.equal(point.y, 32 - normals[point.index].y * 23);
+      assert.ok(point.label.x >= 10 && point.label.x <= 102);
+      assert.ok(point.label.y >= 9 && point.label.y <= 57);
+      for (const other of positions.slice(i + 1)) {
+        assert.ok(Math.abs(point.label.x - other.label.x) >= 19 || Math.abs(point.label.y - other.label.y) >= 17, 'labels must not overlap');
+      }
+    }
+    return positions;
+  };
+  for (const [view, direction] of Object.entries(viewDirections)) {
+    camera.position.fromArray(direction);
+    camera.up.set(...(['top', 'bottom'].includes(view) ? [-1, 0, 0] : [0, 1, 0]));
+    camera.lookAt(0, 0, 0);
+    const points = check();
+    if (view !== 'perspective') assert.equal(points.filter(point => point.length < .15).length, 1);
+  }
+  for (let longitude = 0; longitude < 24; longitude++) {
+    for (let latitude = 0; latitude < 12; latitude++) {
+      camera.quaternion.setFromEuler(new THREE.Euler(longitude * Math.PI / 12, latitude * Math.PI / 6, longitude * Math.PI / 36));
+      check();
+    }
+  }
 });

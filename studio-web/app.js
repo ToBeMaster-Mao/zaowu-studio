@@ -345,6 +345,7 @@ function loadModel(project, modelKey, revision = null) {
   renderSelection();
   $('#geometryStats').innerHTML = '<span>正在载入模型…</span>';
   $('#exportButton').disabled = true;
+  $('#resetViewButton').disabled = true;
   if (!project.modelUrl) {
     state.iframe = null;
     $('#viewportMount').innerHTML = '<div class="stage-placeholder"><span class="large-cube">◇</span><p>上传参考图，开始创造你的模型</p></div>';
@@ -409,6 +410,7 @@ window.addEventListener('message', event => {
     $('.camera-divider').hidden = !categories.includes('cockpit') && !categories.includes('engines');
     $('#geometryStats').innerHTML = `<div><span>三角面</span><b>${Number(data.stats?.triangles || 0).toLocaleString()}</b></div><div><span>顶点</span><b>${Number(data.stats?.vertices || 0).toLocaleString()}</b></div>`;
     $('#exportButton').disabled = false;
+    $('#resetViewButton').disabled = false;
     $('#animateButton').disabled = !data.animationCount;
     for (const [partId, patch] of Object.entries(state.displayOverrides)) if (state.parts.some(part => part.id === partId)) viewerCommand('setPart', { partId, ...patch });
     for (const [type, value] of Object.entries(state.toggles)) viewerCommand(type, { value });
@@ -588,7 +590,7 @@ function renderVersions() {
   tree.innerHTML = versions.length ? versions.map(version => {
     const previewing = state.previewRevision?.id === version.id;
     const loading = state.previewLoadingId === version.id;
-    return `<article class="version-card ${version.isHead ? 'is-head' : ''} ${previewing ? 'is-previewing' : ''} ${version.status === 'invalid' ? 'invalid' : ''}"><div class="version-top"><span class="version-number">V${revisionNumber(version.id)}</span><strong>${escapeHtml(version.label || '模型版本')}</strong></div><div class="version-meta"><time>${escapeHtml(timeLabel(version.createdAt))} ${version.status === 'pending' ? '· 正在校验' : version.status === 'invalid' ? '· 校验未通过' : ''}</time><div class="version-badges">${version.isHead ? '<span class="current-label">当前版本</span>' : ''}${previewing ? '<span class="preview-label">预览中</span>' : ''}</div></div>${version.status === 'valid' ? `<div class="version-actions"><button class="version-preview-button" data-preview="${escapeHtml(version.id)}" ${!canPreview || loading || previewing || (version.isHead && !state.previewRevision) ? 'disabled' : ''}>${loading ? '正在载入…' : previewing ? '正在预览' : version.isHead ? (state.previewRevision ? '返回当前版本' : '当前展示') : '预览此版本'}</button>${!version.isHead ? `<button data-restore="${escapeHtml(version.id)}" ${canRestore ? '' : 'disabled'} title="${canRestore ? '将此版本设为当前工作版本' : '请等待当前任务或操作结束'}">恢复此版本</button>` : ''}</div>` : ''}</article>`;
+    return `<article class="version-card ${version.isHead ? 'is-head' : ''} ${previewing ? 'is-previewing' : ''} ${version.status === 'invalid' ? 'invalid' : ''}"><div class="version-top"><span class="version-number">V${revisionNumber(version.id)}</span><strong>${escapeHtml(version.label || '模型版本')}</strong></div><div class="version-meta"><time>${escapeHtml(timeLabel(version.createdAt))} ${version.status === 'pending' ? '· 正在校验' : version.status === 'invalid' ? '· 校验未通过' : ''}</time><div class="version-badges">${previewing ? '<span class="preview-label">预览中</span>' : ''}</div></div>${version.status === 'valid' ? `<div class="version-actions"><button class="version-preview-button" data-preview="${escapeHtml(version.id)}" ${!canPreview || loading || previewing || (version.isHead && !state.previewRevision) ? 'disabled' : ''}>${loading ? '正在载入…' : previewing ? '正在预览' : version.isHead ? (state.previewRevision ? '返回当前版本' : '当前展示') : '预览此版本'}</button>${!version.isHead ? `<button data-restore="${escapeHtml(version.id)}" ${canRestore ? '' : 'disabled'} title="${canRestore ? '将此版本设为当前工作版本' : '请等待当前任务或操作结束'}">恢复此版本</button>` : ''}</div>` : ''}</article>`;
   }).join('') : '<p class="empty-small">模型修改完成后，版本将显示在这里。</p>';
   scrollPane.scrollTop = scrollTop;
   $$('[data-preview]').forEach(button => { button.onclick = () => {
@@ -946,6 +948,7 @@ $('#toggleRight').onclick = () => {
   const app = $('#app');
   app.classList.toggle(window.innerWidth <= 980 ? 'right-open' : 'right-hidden');
 };
+$('#resetViewButton').onclick = () => { if (state.ready) viewerCommand('view', { view: 'perspective' }); };
 $$('[data-close-panel]').forEach(button => { button.onclick = () => { $('#app').classList.remove(`${button.dataset.closePanel}-open`); }; });
 window.addEventListener('keydown', event => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
