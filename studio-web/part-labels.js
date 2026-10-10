@@ -9,6 +9,8 @@ const numberLabel = index => String(Number(index) + 1).padStart(2, '0');
 const sided = (label, side) => `${label} · ${sideName(side)}`;
 
 const names = {
+  Foundation_And_Entrances: ['基础与入口', '部件分组'],
+  '01_Foundation_And_Entrances': ['基础与入口', '部件分组'],
   Fuselage: ['机身外壳', '机身蒙皮'],
   Wing_body_fairing: ['翼身整流罩', '机翼与机身连接'],
   Vertical_stabilizer: ['垂直尾翼', '尾翼主体'],

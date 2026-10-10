@@ -1,0 +1,47 @@
+/* Properties are controls, not a second scene hierarchy. */
+#rightPanel #properties { font-size: 14px; }
+#rightPanel #properties .property-header { padding: 24px 20px; }
+#rightPanel #properties .property-header h2 { margin: 0; color: #e3e8ed; font-size: 16px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+#rightPanel #properties .property-section { padding: 22px 20px; }
+#rightPanel #properties .property-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; margin: 0; color: #c6cfd7; font-size: 14px; }
+#rightPanel #properties .property-row + .property-row { margin-top: 14px; }
+#rightPanel #properties .property-switch { position: relative; display: inline-flex; flex: none; width: 40px; height: 24px; cursor: pointer; }
+#rightPanel #properties .property-switch input { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+#rightPanel #properties .property-switch-track { width: 100%; height: 100%; border: 1px solid #ffffff16; border-radius: 20px; background: #39424a; transition: background .15s; }
+#rightPanel #properties .property-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #f4f7ee; box-shadow: 0 1px 3px #0003; transition: transform .15s; }
+#rightPanel #properties .property-switch input:checked + .property-switch-track { background: #d3f28a; border-color: #d3f28a; }
+#rightPanel #properties .property-switch input:checked + .property-switch-track::after { transform: translateX(16px); }
+#rightPanel #properties .property-switch:focus-within .property-switch-track { outline: 2px solid var(--lime); outline-offset: 3px; }
+#rightPanel #properties .property-color-control { position: relative; display: inline-flex; flex: none; align-items: center; gap: 9px; min-width: 108px; height: 38px; padding: 7px 9px; border: 1px solid #ffffff16; border-radius: 7px; background: #22282e; cursor: pointer; }
+#rightPanel #properties .property-color-control:hover { border-color: #ffffff30; }
+#rightPanel #properties .property-color-control:focus-within { outline: 2px solid var(--lime); outline-offset: 3px; }
+#rightPanel #properties .property-color-swatch { flex: none; width: 22px; height: 22px; border: 1px solid #ffffff26; border-radius: 3px; background: var(--part-color, #ffffff); }
+#rightPanel #properties .property-color-swatch.is-mixed { background: linear-gradient(135deg, #d2c7ad 50%, #8c959f 50%); }
+#rightPanel #properties .property-color-swatch.is-unavailable { background: transparent; border-style: dashed; }
+#rightPanel #properties .color-value { flex: 1; color: #c7d0d9; font-family: inherit; font-size: 13px; line-height: 1.4; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#rightPanel #properties .property-color-control svg { width: 13px; height: 13px; fill: none; stroke: #9eabb7; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#rightPanel #properties .property-color-control input[type='color'] { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; border-radius: inherit; opacity: 0; cursor: pointer; }
+#rightPanel #properties .property-section h3 { margin: 0 0 16px; color: #c7d0d9; font-size: 14px; font-weight: 500; line-height: 1.5; }
+#rightPanel #properties .position-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+#rightPanel #properties .position-inputs label { display: flex; align-items: center; gap: 6px; min-width: 0; height: 38px; padding: 0 8px; border: 1px solid #ffffff14; border-radius: 7px; background: #1b2127; }
+#rightPanel #properties .position-inputs label:focus-within { border-color: #d3f28a80; }
+#rightPanel #properties .position-axis { flex: none; font-size: 13px; font-weight: 500; }
+#rightPanel #properties .axis-x { color: #de9290; }
+#rightPanel #properties .axis-y { color: #97c9a0; }
+#rightPanel #properties .axis-z { color: #8eb9dc; }
+#rightPanel #properties .position-inputs input { width: 100%; min-width: 0; height: 100%; padding: 0; border: 0; background: transparent; color: #d0d9e2; font-size: 13px; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
+#rightPanel #properties .property-position-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+#rightPanel #properties .apply-position { width: auto; min-height: 36px; padding: 8px 14px; border: 1px solid #ffffff16; border-radius: 7px; background: #ffffff02; color: #c5cfd9; font-size: 13px; line-height: 1.4; }
+#rightPanel #properties .apply-position:hover:not(:disabled) { border-color: #d3f28a35; background: #d3f28a08; }
+#rightPanel #properties .property-conversation { padding: 22px 20px; }
+#rightPanel #properties .property-ask { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 42px; margin: 0; padding: 10px 14px; border: 1px solid #b8bfd529; border-radius: 7px; background: #b8bfd508; color: #d8dfe7; font-size: 14px; font-weight: 500; line-height: 1.5; }
+#rightPanel #properties .property-ask svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#rightPanel #properties .property-ask:hover:not(:disabled) { background: #d3f28a08; border-color: #d3f28a40; color: #d9e9bf; }
+#rightPanel #properties .property-switch:has(input:disabled),
+#rightPanel #properties .property-color-control:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+#rightPanel #properties input:disabled { cursor: not-allowed; }
+#rightPanel #properties .history-readonly-note { margin: 16px 20px 0; padding: 8px 10px; font-size: 12px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) {
+  #rightPanel #properties .property-switch-track,
+  #rightPanel #properties .property-switch-track::after { transition: none; }
+}

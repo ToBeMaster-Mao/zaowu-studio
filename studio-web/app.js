@@ -528,29 +528,42 @@ function renderSelection() {
   }
   if (!part) {
     $('#selectionSummary').innerHTML = '<div class="selection-empty"><strong>未选择部件</strong><p>在模型或列表中选择部件。</p></div>';
-    $('#properties').innerHTML = '<div class="empty-small" style="padding:56px 25px">选择一个部件<br>即可调整颜色、位置和可见性。</div>';
+    $('#properties').innerHTML = '<div class="empty-small property-empty">选择一个部件</div>';
     return;
   }
   $('#selectionSummary').innerHTML = `<div class="selection-eyebrow">当前选中</div><div class="selection-summary-row"><div class="selection-summary-copy"><strong>${escapeHtml(partLabel(part))}</strong><p>${escapeHtml(partDetail(part))}${part.visible === false ? ' · 已隐藏' : ''}</p></div><button id="selectionProperties" class="selection-properties">查看属性</button></div>`;
   $('#selectionProperties').onclick = () => setTab('properties');
   const position = part.position || [0, 0, 0];
-  $('#properties').innerHTML = `<div class="property-header"><div class="part-kind">${part.kind === 'group' ? 'GROUP' : 'MESH'} · ${escapeHtml(categoryLabels[part.category] || '部件')}</div><h2>${escapeHtml(partLabel(part))}</h2><code>${escapeHtml(part.partId || part.id)}</code></div><section class="property-section"><h3>外观</h3><label class="property-row"><span>显示部件</span><input type="checkbox" id="partVisible" ${part.visible !== false ? 'checked' : ''}></label><div class="property-row"><label for="partColor">材质颜色</label><span class="color-value">${escapeHtml(part.color || '按子部件')}</span><input type="color" id="partColor" value="${escapeHtml(part.color || '#ffffff')}" aria-label="部件颜色"></div>${part.kind === 'group' ? '<p class="property-footnote">调整分组颜色将应用到组内的所有网格。</p>' : ''}</section><section class="property-section"><h3>局部位置</h3><div class="position-inputs">${['X', 'Y', 'Z'].map((axis, index) => `<label>${axis}<input type="number" step="0.01" value="${Number(position[index]).toFixed(3)}" id="partPosition${index}" aria-label="${axis} 轴位置"></label>`).join('')}</div><button id="applyPosition" class="apply-position">应用位置</button><p class="property-footnote">调整即时保存，并包含在导出的 GLB 中。</p></section><button id="askAboutPart" class="property-ask">✧ 让 Codex 修改这个部件 ↗</button>`;
+  const color = /^#[0-9a-f]{6}$/i.test(part.color || '') ? part.color.toUpperCase() : null;
+  const colorUnavailable = part.colorState === 'unavailable';
+  $('#properties').innerHTML = `<div class="property-header"><h2>${escapeHtml(partLabel(part))}</h2></div>
+    <section class="property-section property-appearance">
+      <div class="property-row"><label for="partVisible">显示</label><label class="property-switch"><input type="checkbox" id="partVisible" role="switch" aria-label="显示部件" ${part.visible !== false ? 'checked' : ''}><span class="property-switch-track" aria-hidden="true"></span></label></div>
+      <div class="property-row"><label for="partColor">颜色</label><label class="property-color-control" for="partColor"><span class="property-color-swatch${colorUnavailable ? ' is-unavailable' : color ? '' : ' is-mixed'}"${color ? ` style="--part-color:${color}"` : ''} aria-hidden="true"></span><span class="color-value">${color || (colorUnavailable ? '无颜色' : '混合')}</span><svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true"><path d="m5 6.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><input type="color" id="partColor" value="${color || '#ffffff'}" aria-label="部件颜色" ${colorUnavailable ? 'disabled' : ''}></label></div>
+    </section>
+    <section class="property-section property-position"><h3>位置</h3><div class="position-inputs">${['X', 'Y', 'Z'].map((axis, index) => `<label><span class="position-axis axis-${axis.toLowerCase()}">${axis}</span><input type="number" step="0.01" value="${Number(position[index]).toFixed(3)}" id="partPosition${index}" aria-label="${axis} 轴位置"></label>`).join('')}</div><div class="property-position-actions"><button id="applyPosition" class="apply-position">应用位置</button></div></section>
+    <div class="property-conversation"><button id="askAboutPart" class="property-ask"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true"><path d="M5 15.5 2.75 17v-4.5A3 3 0 0 1 2 10.5V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v6.5a3 3 0 0 1-3 3H5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 7.5h8M6 11h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>对话修改</span></button></div>`;
   $('#partVisible').onchange = event => void saveOverride({ visible: event.target.checked });
   $('#partColor').onchange = event => void saveOverride({ color: event.target.value });
-  $('#applyPosition').onclick = () => {
-    const position = [0, 1, 2].map(index => Number($(`#partPosition${index}`).value));
+  const applyPosition = () => {
+    const position = [0, 1, 2].map(index => $(`#partPosition${index}`).valueAsNumber);
     if (!position.every(Number.isFinite)) return toast('请输入有效的坐标数值', true);
     void saveOverride({ position });
   };
+  $('#applyPosition').onclick = applyPosition;
+  $$('#properties .position-inputs input').forEach(input => { input.onkeydown = event => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    applyPosition();
+  }; });
   $('#askAboutPart').onclick = () => {
     if (viewingHistory()) return;
     if (window.innerWidth <= 690) $('#app').classList.add('left-open'); else $('#app').classList.remove('left-hidden');
     $('#promptInput').focus();
   };
   if (viewingHistory()) {
-    $('#properties').insertAdjacentHTML('afterbegin', '<p class="history-readonly-note">正在查看历史版本。颜色、位置和可见性为当时的保存状态；返回当前版本后可编辑。</p>');
+    $('#properties').insertAdjacentHTML('afterbegin', '<p class="history-readonly-note">历史版本 · 只读</p>');
     $$('#properties input, #properties button').forEach(control => { control.disabled = true; });
-    $('#properties .property-section:last-of-type .property-footnote').textContent = '历史预览不会修改当前工作版本。';
   }
 }
 

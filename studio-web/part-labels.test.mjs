@@ -42,6 +42,19 @@ test('generic stems and fans do not acquire lamp or aircraft meaning', () => {
   assert.equal(partLabel({ name: 'Spinner' }), 'Spinner');
 });
 
+test('foundation display names translate exactly without rewriting source names or IDs', () => {
+  for (const name of ['Foundation_And_Entrances', '01_Foundation_And_Entrances']) {
+    const part = Object.freeze({ name, id: `/${name}`, kind: 'group' });
+    assert.equal(partLabel(part), '基础与入口');
+    assert.equal(partDetail(part), '部件分组');
+    assert.equal(part.name, name);
+    assert.equal(part.id, `/${name}`);
+  }
+  assert.equal(partLabel({ name: '02_Foundation_And_Entrances' }), '02 Foundation And Entrances');
+  assert.equal(partLabel({ name: '01_Cup_Handle' }), '01 Cup Handle');
+  assert.equal(partLabel({ name: 'Custom_Foundation_And_Entrances' }), 'Custom Foundation And Entrances');
+});
+
 test('custom names that resemble JavaScript prototype properties stay safe', () => {
   assert.equal(partLabel({ name: 'constructor_1' }), 'constructor 1');
   assert.equal(partLabel({ name: '__proto___1' }), '  proto   1');

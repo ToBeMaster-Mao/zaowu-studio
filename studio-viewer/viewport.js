@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { createOrientationControl, viewDirections } from './orientation-control.js';
+import { summarizeMaterialColor } from './material-color.js';
 
 // Executed only in an opaque-origin sandbox. The bridge and workspace APIs live
 // in the parent; this module exchanges explicit, serializable viewport commands.
@@ -70,13 +71,12 @@ function visibleInHierarchy(object) {
 }
 
 function describePart(id, object) {
-  const material = materialsOf(object).find(value => value.color);
   return {
     id, name: object.name || (object.isMesh ? 'Unnamed mesh' : 'Group'),
     parentId: idByObject.get(object.parent) || null,
     kind: object.isMesh ? 'mesh' : 'group', category: classify(object),
     visible: object.visible, position: object.position.toArray(),
-    color: material ? `#${material.color.getHexString()}` : null,
+    ...summarizeMaterialColor(object),
   };
 }
 
