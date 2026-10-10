@@ -315,13 +315,13 @@ function renderTask() {
   $('#includeProjectReferences').disabled = busy || state.uploading || viewingHistory();
   $('#conversationImageCount').textContent = groups.length ? `${groups.length} 组 · ${groupImageIds.size} 张` : '也可拖入或粘贴图片';
   conversationImages.refresh();
-  $('#creationOverlay').hidden = !feedback.overlay || viewingHistory();
+  const showCreation = feedback.overlay && !viewingHistory();
+  $('#creationOverlay').hidden = !showCreation;
+  $('.stage').classList.toggle('is-creating', showCreation);
   $('#creationOverlay').dataset.phase = feedback.phase;
-  $('#creationTitle').textContent = feedback.title;
-  $('#creationDescription').textContent = feedback.description;
-  $('#creationActivity').textContent = feedback.phase === 'approval' ? '需要你的确认' : feedback.phase === 'stopping' ? '正在等待停止确认' : feedback.phase === 'disconnected' ? '等待恢复连接' : '本地 Agent 正在创作';
+  $('#creationActivity').textContent = ({ submitting: '准备中', validating: '正在载入预览', approval: '等待确认', stopping: '正在停止', disconnected: '等待恢复连接' })[feedback.phase] || '正在创作';
   $('#overlayApprovalButton').hidden = feedback.phase !== 'approval';
-  creationParticles.setActive(feedback.overlay && !viewingHistory());
+  creationParticles.setActive(showCreation);
   updateElapsed();
   renderVersions();
 }

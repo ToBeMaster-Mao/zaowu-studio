@@ -55,8 +55,6 @@
 .connection-error, .skill-card p, .code-note span { font-size: 12px; }
 .connection-state small { font-size: 11px; }
 .toasts { bottom: 22px; }
-#creationOverlay #creationDescription { font-size: 13px; }
-#creationOverlay #overlayStopButton, #creationOverlay #overlayApprovalButton, #creationOverlay .creation-meta { font-size: 12px; }
 @media(max-width:690px) {
   .project-control { flex: 1; max-width: 195px; }
   .project-control select { max-width: 110px; font-size: 12px; }
