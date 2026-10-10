@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/studio-web/properties.css">
   <link rel="stylesheet" href="/studio-web/viewport-workspace.css">
   <link rel="stylesheet" href="/studio-web/select-menu.css">
+  <link rel="stylesheet" href="/studio-web/creator-panel.css">
   <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
 </head>
 <body>
@@ -31,22 +32,24 @@
 
     <main class="workspace">
       <aside class="left-panel" id="leftPanel" aria-label="创作助手">
+        <div class="creator-panel-content">
         <div class="panel-heading"><h1>创作助手</h1><button class="icon-button panel-close" data-close-panel="left" aria-label="收起创作助手">‹</button></div>
-        <section class="reference-section"><div class="section-label"><span>参考图片 <span id="referenceCount" class="muted"></span></span><button id="uploadButton" class="text-button">＋ 添加图片</button></div><div id="referenceDropzone" class="reference-dropzone" tabindex="0" role="group" aria-label="项目参考图上传区，可拖入多张图片"><div id="references" class="reference-list"></div><p class="reference-drop-hint">支持多图拖入 · PNG / JPG / WEBP</p><div class="reference-drop-overlay" aria-hidden="true">松开以添加图片</div></div><div class="reference-selection-toolbar"><span id="referenceSelectionCount"></span><button id="selectAllReferences" class="text-button">全选</button><button id="clearReferenceSelection" class="text-button">取消选择</button></div><input id="referenceInput" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple><button id="generateButton" class="generate-button" disabled>开始建模</button><p id="referenceHint" class="reference-hint"></p></section>
-        <div class="chat-heading"><span>对话</span><span class="subtle" id="messageCount"></span></div>
+        <section class="reference-section"><div class="section-label"><span>参考图片 <span id="referenceCount" class="muted"></span></span><button id="uploadButton" class="text-button">＋ 添加图片</button></div><div id="referenceDropzone" class="reference-dropzone" tabindex="0" role="group" aria-label="项目参考图上传区，可拖入多张图片"><div id="references" class="reference-list"></div><div class="reference-drop-overlay" aria-hidden="true">松开以添加图片</div></div><div class="reference-selection-toolbar"><span id="referenceSelectionCount"></span><button id="selectAllReferences" class="text-button">全选</button><button id="clearReferenceSelection" class="text-button">取消选择</button></div><input id="referenceInput" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple><button id="generateButton" class="generate-button" disabled>开始建模</button><p id="referenceHint" class="reference-hint"></p></section>
+        <div class="chat-heading"><span>对话</span><button id="clearConversationButton" type="button" class="icon-button" aria-label="隐藏已有消息（可恢复）" title="隐藏已有消息（可恢复）" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/></svg></button></div>
+        <div id="conversationHistoryNotice" hidden><span>已隐藏历史消息</span><button id="restoreConversationButton" type="button">恢复</button></div>
         <div id="messages" class="messages" role="log" aria-label="建模对话"></div>
         <button id="newMessagesButton" hidden>有新回复 · 查看最新 ↓</button>
         <div id="taskNotice"><section class="task-card" data-tone="neutral"><div class="task-card-top"><span class="task-state-dot" aria-hidden="true"></span><strong id="taskTitle" role="status" aria-live="polite">准备开始</strong><time id="taskElapsed"></time></div><p id="taskDescription">上传图片或输入建模要求。</p><div class="task-steps" aria-label="任务阶段"><span data-step="prepare">准备</span><span data-step="create">生成</span><span data-step="preview">预览</span></div><div class="task-card-bottom"><span id="taskActivity"></span><button id="taskCardStop" hidden>停止任务</button></div></section></div>
         <div id="approvalPanel" class="approval-panel" hidden></div>
+        </div>
         <form id="composer" class="composer">
           <div id="selectionContext" class="selection-context" hidden></div>
-          <div class="conversation-attachment-toolbar"><button id="attachImagesButton" type="button">＋ 添加图片组</button><span id="conversationImageCount">也可拖入或粘贴图片</span></div>
           <div id="conversationImageGroups"></div>
-          <label id="includeReferenceLabel" class="include-reference-label"><input id="includeProjectReferences" type="checkbox" checked>同时使用已选参考图 <span id="includedReferenceCount"></span></label>
+          <div class="conversation-attachment-toolbar"><button id="attachImagesButton" type="button" title="添加图片组，也可拖入或粘贴图片">＋ 添加图片组</button><span id="conversationImageCount"></span></div>
+          <label id="includeReferenceLabel" class="include-reference-label"><input id="includeProjectReferences" type="checkbox" checked>附带已选参考图 <span id="includedReferenceCount"></span></label>
           <input id="conversationImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple>
-          <label class="composer-label" for="promptInput">继续对话 <span title="发送快捷键">Ctrl + Enter</span></label>
-          <textarea id="promptInput" rows="3" placeholder="描述要修改的地方…"></textarea>
-          <div class="composer-controls"><label class="model-choice"><span aria-hidden="true">✧</span><select id="modelSelect" aria-label="Codex 模型"><option value="">本地默认模型</option></select></label><button id="sendButton" type="submit" class="send-button" aria-label="发送建模要求" title="发送 · Ctrl + Enter">↑</button><button id="stopButton" type="button" class="stop-button" hidden aria-label="停止当前任务">■ 停止</button></div>
+          <textarea id="promptInput" rows="3" placeholder="描述想修改的地方…" aria-label="建模要求" aria-keyshortcuts="Control+Enter Meta+Enter"></textarea>
+          <div class="composer-controls"><div class="model-choice"><svg class="model-ai-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5c.9 5.4 2.1 6.6 7.5 7.5-5.4.9-6.6 2.1-7.5 7.5C9.1 13.1 7.9 11.9 2.5 11 7.9 10.1 9.1 8.9 10 3.5Z"/><path d="M19 2.5v5M16.5 5h5M19 16.5v4M17 18.5h4"/></svg><select id="modelSelect" aria-label="Codex 模型"><option value="">本地默认模型</option></select></div><button id="sendButton" type="submit" class="send-button" aria-label="发送建模要求" title="发送 · Ctrl + Enter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button><button id="stopButton" type="button" class="stop-button" hidden aria-label="停止当前任务">停止任务</button></div>
         </form>
       </aside>
 

@@ -22,6 +22,8 @@ const state = {
   imageGroupsEnabled: false, imageLimits: { perTask: 8, projectLibrary: 128 }, conversationDrafts: new Map(),
 };
 const revisionCache = new Map();
+// Visibility is scoped to this page session; project history and Agent context are retained.
+const hiddenConversationIds = new Map();
 const selectMenus = new Map(['projectSelect', 'modelSelect', 'cameraViewSelect'].map(id => [id, enhanceSelect($(`#${id}`))]));
 const creationParticles = createCreationParticles($('#creationParticles'));
 const pendingRpc = new Map();
@@ -202,17 +204,17 @@ function renderReferences() {
   const references = state.project?.references || [];
   state.referenceIds = new Set([...state.referenceIds].filter(id => references.some(reference => reference.id === id)));
   if (state.project) sessionStorage.setItem(`studio-references:${state.project.id}`, JSON.stringify([...state.referenceIds]));
-  $('#referenceCount').textContent = references.length ? `· ${references.length}` : '';
-  $('#referenceSelectionCount').textContent = `已选 ${state.referenceIds.size} / ${state.imageLimits.perTask} 张`;
+  $('#referenceCount').textContent = '';
+  $('#referenceSelectionCount').textContent = `已选 ${state.referenceIds.size} 张`;
   $('#selectAllReferences').textContent = references.length > state.imageLimits.perTask ? `选前 ${state.imageLimits.perTask} 张` : '全选';
   $('#selectAllReferences').disabled = !references.length || localBusy() || state.uploading;
   $('#clearReferenceSelection').disabled = !state.referenceIds.size || localBusy() || state.uploading;
   if (!references.length) {
-    $('#references').innerHTML = '<button class="upload-empty" id="emptyUpload"><strong>＋</strong><span>拖入图片，或点击批量选择</span><small>正面、侧面、背面都可以一起添加</small></button>';
+    $('#references').innerHTML = '<button class="upload-empty" id="emptyUpload"><strong aria-hidden="true">＋</strong><span>拖入图片，或点击添加</span></button>';
     $('#emptyUpload').onclick = () => $('#referenceInput').click();
     return;
   }
-  $('#references').innerHTML = references.map(reference => `<div class="reference-card ${state.referenceIds.has(reference.id) ? 'is-selected' : ''}"><label class="reference-choice"><img src="${escapeHtml(reference.url)}" alt="参考图片：${escapeHtml(reference.name)}"><input type="checkbox" data-reference="${escapeHtml(reference.id)}" aria-label="选用参考图 ${escapeHtml(reference.name)}" ${state.referenceIds.has(reference.id) ? 'checked' : ''} ${localBusy() || state.uploading ? 'disabled' : ''}><span class="reference-check">${state.referenceIds.has(reference.id) ? '✓ 已选' : '选用'}</span></label><span class="ref-label">${escapeHtml(reference.name)}</span><button class="ref-remove" data-remove-reference="${escapeHtml(reference.id)}" aria-label="移除参考图 ${escapeHtml(reference.name)}" title="移除参考图" ${localBusy() || state.uploading ? 'disabled' : ''}>×</button></div>`).join('');
+  $('#references').innerHTML = references.map(reference => `<div class="reference-card ${state.referenceIds.has(reference.id) ? 'is-selected' : ''}"><label class="reference-choice"><img src="${escapeHtml(reference.url)}" alt="参考图片：${escapeHtml(reference.name)}"><input type="checkbox" data-reference="${escapeHtml(reference.id)}" aria-label="选用参考图 ${escapeHtml(reference.name)}" ${state.referenceIds.has(reference.id) ? 'checked' : ''} ${localBusy() || state.uploading ? 'disabled' : ''}><span class="reference-check" aria-hidden="true">${state.referenceIds.has(reference.id) ? '✓ 已选' : '选用'}</span></label><span class="ref-label">${escapeHtml(reference.name)}</span><button class="ref-remove" data-remove-reference="${escapeHtml(reference.id)}" aria-label="移除参考图 ${escapeHtml(reference.name)}" title="移除参考图" ${localBusy() || state.uploading ? 'disabled' : ''}>×</button></div>`).join('');
   $$('[data-reference]').forEach(input => { input.onchange = () => {
     if (input.checked && state.referenceIds.size >= state.imageLimits.perTask) { input.checked = false; return toast(`本轮最多选 ${state.imageLimits.perTask} 张项目参考图。`); }
     if (input.checked) state.referenceIds.add(input.dataset.reference); else state.referenceIds.delete(input.dataset.reference);
@@ -248,20 +250,22 @@ function messageImages(message) {
 function renderMessages() {
   const container = $('#messages');
   const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-  const messages = [...(state.project?.messages || [])];
+  const hiddenIds = hiddenConversationIds.get(state.project?.id);
+  const messages = (state.project?.messages || []).filter(message => !hiddenIds?.has(message.id));
+  $('#clearConversationButton').disabled = !messages.length || localBusy();
+  $('#conversationHistoryNotice').hidden = !hiddenIds?.size;
   if (isBusy(state.project?.task) && state.project?.task?.status !== 'validating') {
     for (const [id, message] of state.liveMessages) messages.push({ id, role: 'assistant', text: message, live: true });
     if (!state.liveMessages.size) messages.push({ id: 'task-output', role: 'assistant', text: state.project.task.output || '', live: true });
   }
-  $('#messageCount').textContent = messages.length ? `${messages.length} 条消息` : '';
   if (!messages.length) {
-    container.innerHTML = '<div class="empty-chat"><p>生成后，可在这里补充图片或修改要求。</p></div>';
-    $$('[data-prompt]').forEach(button => { button.onclick = () => { $('#promptInput').value = button.dataset.prompt; $('#promptInput').focus(); renderTask(); }; });
+    container.innerHTML = hiddenIds?.size ? '' : '<div class="empty-chat"><p>从一张参考图开始</p></div>';
+    $('#newMessagesButton').hidden = true;
     return;
   }
   container.innerHTML = messages.map(message => {
     const user = message.role === 'user';
-    return `<article class="message ${user ? 'user' : 'assistant'} ${message.live ? 'live' : ''}"><div class="message-head"><span class="message-avatar">${user ? '○' : '✧'}</span><span>${user ? '你' : message.live ? 'Codex · 正在回复' : 'Codex'}</span>${message.live ? '<span class="typing-dots" aria-label="正在回复"><span></span><span></span><span></span></span>' : `<time>${escapeHtml(timeLabel(message.createdAt))}</time>`}</div><div class="message-body">${escapeHtml(message.text || '')}</div>${messageImages(message)}</article>`;
+    return `<article class="message ${user ? 'user' : 'assistant'} ${message.live ? 'live' : ''}" aria-label="${user ? '你' : '创作助手'}" title="${escapeHtml(timeLabel(message.createdAt))}">${message.live ? '<div class="message-head"><span>正在回复</span><span class="typing-dots" aria-hidden="true"><span></span><span></span><span></span></span></div>' : ''}<div class="message-body">${escapeHtml(message.text || '')}</div>${messageImages(message)}</article>`;
   }).join('');
   $$('[data-message-image]').forEach(button => { button.onclick = () => {
     $('#attachmentPreviewImage').src = button.dataset.messageImage;
@@ -316,7 +320,7 @@ function renderTask() {
   $('#includedReferenceCount').textContent = `(${selectedReferences().length})`;
   $('#includeReferenceLabel').hidden = !groups.length;
   $('#includeProjectReferences').disabled = busy || state.uploading || viewingHistory();
-  $('#conversationImageCount').textContent = groups.length ? `${groups.length} 组 · ${groupImageIds.size} 张` : '也可拖入或粘贴图片';
+  $('#conversationImageCount').textContent = groups.length ? `${groups.length} 组 · ${groupImageIds.size} 张` : '';
   conversationImages.refresh();
   const showCreation = feedback.overlay && !viewingHistory();
   $('#creationOverlay').hidden = !showCreation;
@@ -957,6 +961,17 @@ $('#overlayApprovalButton').onclick = () => {
   $('#approvalPanel button')?.focus();
 };
 $('#newMessagesButton').onclick = () => { $('#messages').scrollTop = $('#messages').scrollHeight; $('#newMessagesButton').hidden = true; };
+$('#clearConversationButton').onclick = () => {
+  if (!state.project || localBusy()) return;
+  hiddenConversationIds.set(state.project.id, new Set(state.project.messages.map(message => message.id)));
+  renderMessages();
+  $('#restoreConversationButton').focus();
+};
+$('#restoreConversationButton').onclick = () => {
+  hiddenConversationIds.delete(state.project?.id);
+  renderMessages();
+  $('#clearConversationButton').focus();
+};
 $('#messages').addEventListener('scroll', () => {
   const node = $('#messages');
   if (node.scrollHeight - node.scrollTop - node.clientHeight < 70) $('#newMessagesButton').hidden = true;
