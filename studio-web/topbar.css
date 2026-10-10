@@ -1,0 +1,161 @@
+.topbar {
+  gap: 18px;
+  min-width: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid #ffffff0d;
+  background: #191d20;
+}
+
+.topbar .brand { flex: none; gap: 10px; }
+.topbar .brand-mark { width: 30px; height: 30px; }
+.topbar .brand strong { color: #ecf0f2; font-size: 20px; font-weight: 650; letter-spacing: .2px; }
+.topbar .brand strong span { margin-left: 7px; color: #929ea7; font-size: 14px; font-weight: 450; letter-spacing: 0; }
+.topbar .header-divider { flex: none; height: 23px; background: #ffffff12; }
+.topbar .topbar-spacer { flex: 1 1 16px; min-width: 0; }
+
+.topbar .project-control {
+  flex: 0 1 370px;
+  min-width: 0;
+  max-width: 370px;
+  height: 40px;
+  padding: 2px 3px;
+  gap: 3px;
+  border: 1px solid #ffffff0e;
+  border-radius: 9px;
+  background: #21272b;
+}
+
+.topbar .project-picker { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; gap: 4px; padding-left: 9px; }
+.topbar .project-picker-icon { width: 17px; height: 17px; color: #93a1aa; }
+.topbar .project-picker > .studio-select-trigger {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  height: 34px;
+  min-height: 34px;
+  padding: 6px 8px;
+  gap: 16px;
+  border: 0;
+  border-radius: 6px;
+  color: #e1e7ea;
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 22px;
+}
+.topbar .project-picker > .studio-select-trigger:hover:not(:disabled),
+.topbar .project-picker > .studio-select-trigger[aria-expanded="true"] { background: #ffffff07; }
+.topbar .project-picker .studio-select-chevron { width: 14px; height: 14px; color: #91a0aa; }
+.topbar .project-picker select { min-width: 0; max-width: 100%; padding: 6px 8px; font-size: 14px; }
+.topbar .project-action-divider { flex: none; width: 1px; height: 18px; margin: 0 3px; background: #ffffff13; }
+
+.topbar .header-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  gap: 6px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #aeb9c0;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.topbar .header-action:hover:not(:disabled) { border-color: #ffffff09; background: #ffffff08; color: #eef1f3; }
+.topbar .header-action svg { width: 17px; height: 17px; }
+.topbar .header-action-label { font-size: 13px; }
+
+.topbar .header-tools { display: flex; align-items: center; flex: none; gap: 10px; }
+.topbar .connection-button,
+.topbar .header-skill-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: 36px;
+  padding: 0 11px;
+  gap: 8px;
+  border: 1px solid #ffffff12;
+  border-radius: 7px;
+  background: #22282c;
+  color: #bec7ce;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.topbar .connection-button.connected { border-color: #ffffff12; background: #22282c; color: #bec7ce; }
+.topbar .connection-button:hover:not(:disabled),
+.topbar .header-skill-button:hover:not(:disabled) { border-color: #ffffff26; background: #2b3338; color: #edf1f3; }
+.topbar .connection-name { color: #dce2e6; font-weight: 550; }
+.topbar .connection-icon,
+.topbar .header-skill-button svg { width: 18px; height: 18px; color: #98a6b0; }
+.topbar .status-dot { width: 5px; height: 5px; margin-left: 3px; background: #84919b; box-shadow: none; }
+.topbar .connection-button.connected .status-dot { background: #b8d883; box-shadow: none; }
+.topbar #connectionLabel { color: #9daab3; font-size: 12px; }
+.topbar .connection-button.connected #connectionLabel { color: #b7c6a6; }
+.topbar .header-skill-button { background: transparent; }
+.topbar .project-picker-icon,
+.topbar .header-action svg,
+.topbar .connection-icon,
+.topbar .header-skill-button svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.topbar button:focus-visible,
+.topbar .brand:focus-visible { outline: 2px solid #d3f28a; outline-offset: 3px; }
+
+#projectSelectMenu { border-color: #ffffff1a; background: #252c30; }
+#projectSelectMenu .studio-select-option { font-size: 14px; }
+
+@media (max-width: 1190px) {
+  .topbar { padding: 0 18px; gap: 14px; }
+  .topbar .project-control { flex-basis: 310px; max-width: 310px; }
+  .topbar .brand strong { font-size: 19px; }
+  .topbar .header-tools { gap: 8px; }
+}
+
+@media (max-width: 980px) {
+  .topbar .brand strong span { display: none; }
+  .topbar .project-control { flex-basis: 280px; max-width: 280px; }
+  .topbar .header-action-label { display: none; }
+}
+
+@media (max-width: 690px) {
+  .topbar { padding: 0 12px; gap: 10px; }
+  .topbar .brand { gap: 7px; }
+  .topbar .brand-mark { width: 27px; height: 27px; }
+  .topbar .brand strong { font-size: 17px; }
+  .topbar .header-divider,
+  .topbar .topbar-spacer { display: none; }
+  .topbar .project-control { flex: 1 1 auto; max-width: none; height: 38px; padding: 1px 2px; gap: 1px; }
+  .topbar .project-picker { padding-left: 6px; gap: 2px; }
+  .topbar .project-picker > .studio-select-trigger { padding: 6px; gap: 5px; font-size: 13px; }
+  .topbar .header-action { min-width: 32px; width: 32px; padding: 0; }
+  .topbar .project-action-divider { margin: 0 2px; }
+  .topbar .header-tools { gap: 6px; }
+  .topbar .connection-button { gap: 6px; padding: 0 8px; }
+  .topbar .connection-icon,
+  .topbar #connectionLabel,
+  .topbar .header-skill-label { display: none; }
+  .topbar .status-dot { margin-left: 0; }
+  .topbar .header-skill-button { width: 36px; padding: 0; }
+}
+
+@media (max-width: 540px) {
+  .topbar { gap: 8px; }
+  .topbar .project-picker { padding-left: 2px; }
+  .topbar .project-picker-icon { display: none; }
+  .topbar .connection-name { display: none; }
+  .topbar .connection-icon { display: block; }
+  .topbar .connection-button { position: relative; width: 36px; padding: 0; }
+  .topbar .connection-button .status-dot { position: absolute; top: 5px; right: 5px; width: 4px; height: 4px; }
+}
+
+@media (max-width: 400px) {
+  .topbar { padding: 0 8px; gap: 6px; }
+  .topbar .brand strong { display: none; }
+  .topbar .brand-mark { width: 28px; height: 28px; }
+  .topbar .header-tools { gap: 4px; }
+}

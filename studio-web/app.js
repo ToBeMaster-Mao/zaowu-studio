@@ -369,7 +369,8 @@ function updateElapsed() {
 function renderBridge() {
   const bridge = state.bridge;
   $('#connectButton').classList.toggle('connected', bridge.connected);
-  $('#connectionLabel').textContent = bridge.connected ? 'Codex 已连接' : '连接 Codex';
+  $('#connectionLabel').textContent = bridge.connected ? '已连接' : '未连接';
+  $('#connectButton').setAttribute('aria-label', `管理 Codex 连接，当前${bridge.connected ? '已连接' : '未连接'}`);
   const models = bridge.models || [];
   const previous = $('#modelSelect').value || state.modelChoice;
   $('#modelSelect').innerHTML = '<option value="">本地默认模型</option>' + models.map(model => `<option value="${escapeHtml(model.model || model.id)}">${escapeHtml(model.displayName || model.id)}</option>`).join('');

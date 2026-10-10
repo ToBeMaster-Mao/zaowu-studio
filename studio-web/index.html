@@ -18,17 +18,25 @@
   <link rel="stylesheet" href="/studio-web/select-menu.css">
   <link rel="stylesheet" href="/studio-web/creator-panel.css">
   <link rel="stylesheet" href="/studio-web/display-settings.css">
+  <link rel="stylesheet" href="/studio-web/topbar.css">
   <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
 </head>
 <body>
   <div class="app" id="app">
     <header class="topbar">
       <a class="brand" href="/" aria-label="造物 Studio 首页"><img class="brand-mark" src="/studio-web/brand/logo-mark.svg" width="32" height="32" alt=""><strong>造物<span>Studio</span></strong></a>
-      <span class="header-divider"></span>
-      <div class="project-control"><select id="projectSelect" aria-label="当前项目"><option>正在载入项目…</option></select><button id="newProject" class="icon-button" title="新建项目" aria-label="新建项目">＋</button><button id="projectInfoButton" class="icon-button" aria-label="查看项目目录" title="查看项目目录"><svg class="project-folder-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h6l2 2h10v12H3V7Z"/><path d="M3 10h18"/></svg></button></div>
+      <span class="header-divider" aria-hidden="true"></span>
+      <div class="project-control" role="group" aria-label="项目操作">
+        <div class="project-picker"><svg class="project-picker-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg><select id="projectSelect" aria-label="当前项目"><option>正在载入项目…</option></select></div>
+        <span class="project-action-divider" aria-hidden="true"></span>
+        <button id="newProject" class="header-action icon-button" type="button" title="新建项目" aria-label="新建项目" aria-haspopup="dialog" aria-controls="newProjectDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="header-action-label">新建</span></button>
+        <button id="projectInfoButton" class="header-action icon-button" type="button" aria-label="查看项目目录" title="查看项目目录" aria-haspopup="dialog" aria-controls="projectInfoDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7V5.5h6l2 2h9v11a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V7Z"/><path d="M3.5 10.5h17"/></svg></button>
+      </div>
       <div class="topbar-spacer"></div>
-      <button id="connectButton" class="connection-button"><span class="status-dot"></span><span id="connectionLabel">连接 Codex</span><span class="button-arrow">↗</span></button>
-      <button id="skillButton" class="subtle-button"><span aria-hidden="true">↧</span> <span>获取 Skill</span></button>
+      <div class="header-tools">
+        <button id="connectButton" class="connection-button" type="button" title="管理 Codex 连接" aria-label="管理 Codex 连接" aria-haspopup="dialog" aria-controls="connectDialog"><svg class="connection-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3M13 15h4"/></svg><span class="connection-name">Codex</span><span class="status-dot" aria-hidden="true"></span><span id="connectionLabel">未连接</span></button>
+        <button id="skillButton" class="header-skill-button" type="button" aria-label="获取建模 Skill" title="获取建模 Skill" aria-haspopup="dialog" aria-controls="skillDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg><span class="header-skill-label">建模 Skill</span></button>
+      </div>
     </header>
 
     <main class="workspace">
