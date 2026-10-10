@@ -202,7 +202,8 @@ function fit(view = 'perspective') {
     distance = Math.max(distance, Math.abs(point.dot(right)) / (tangent * camera.aspect) + depth, Math.abs(point.dot(up)) / tangent + depth);
   }
   controls.target.copy(target);
-  camera.position.copy(target).addScaledVector(direction, distance * 1.07);
+  // Leave breathing room around the model beneath the viewport controls.
+  camera.position.copy(target).addScaledVector(direction, distance * 1.2);
   camera.lookAt(target);
   controls.update();
   post('camera', cameraState());

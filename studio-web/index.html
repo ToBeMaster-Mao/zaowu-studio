@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/studio-web/conversation-images.css">
   <link rel="stylesheet" href="/studio-web/reference-workspace.css">
   <link rel="stylesheet" href="/studio-web/properties.css">
+  <link rel="stylesheet" href="/studio-web/viewport-workspace.css">
   <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
 </head>
 <body>
@@ -49,13 +50,28 @@
       </aside>
 
       <section class="stage" aria-label="三维工作区">
-        <div class="stage-top"><div class="stage-title"><button id="toggleLeft" class="icon-button" title="展开或收起创作助手" aria-label="展开或收起创作助手">☷</button><span id="stageProjectName">我的模型</span></div><div class="stage-view-actions" role="group" aria-label="视口操作"><button id="resetViewButton" class="icon-button stage-action-button" type="button" title="复位到透视视角" aria-label="复位到透视视角" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.3 8.3a7.5 7.5 0 1 1-.6 6.2M5 3.8v4.8h4.8"/></svg></button><button id="toggleRight" class="icon-button stage-action-button" type="button" title="展开或收起部件面板" aria-label="展开或收起部件面板" aria-controls="rightPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16M17 8h1M17 12h1M17 16h1"/></svg></button></div></div>
+        <div class="stage-top">
+          <div class="stage-title">
+            <button id="toggleLeft" class="icon-button stage-action-button stage-sidebar-button" type="button" title="展开或收起创作助手" aria-label="展开或收起创作助手" aria-controls="leftPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 4v16M6.5 8H7M6.5 12H7M6.5 16H7"/></svg></button>
+            <div class="stage-project-info"><strong id="stageProjectName">我的模型</strong><div class="geometry-stats" id="geometryStats"></div></div>
+          </div>
+          <div class="stage-view-actions" role="group" aria-label="视口操作"><button id="resetViewButton" class="icon-button stage-action-button" type="button" title="复位到透视视角" aria-label="复位到透视视角" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.3 8.3a7.5 7.5 0 1 1-.6 6.2M5 3.8v4.8h4.8"/></svg></button><button id="toggleRight" class="icon-button stage-action-button" type="button" title="展开或收起部件面板" aria-label="展开或收起部件面板" aria-controls="rightPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16M17 8h1M17 12h1M17 16h1"/></svg></button></div>
+        </div>
         <div id="versionPreviewBanner" class="version-preview-banner" hidden><div class="version-preview-copy"><small>历史版本 · 只读预览</small><strong id="previewVersionLabel"></strong><span id="previewVersionHint">当前工作版本未改变</span></div><button id="returnCurrentButton">返回当前版本</button></div>
         <div id="viewportMount" class="viewport-mount"><div class="stage-placeholder"><span class="large-cube">◇</span><p>正在打开工作空间</p></div></div>
-        <div class="geometry-stats" id="geometryStats"></div>
         <div class="stage-note" id="stageNote" hidden></div>
-        <div class="stage-tools"><button class="tool-button" id="wireButton" aria-pressed="false" title="切换线框"><span aria-hidden="true">▧</span> 线框</button><button class="tool-button" id="gridButton" aria-pressed="false" title="切换网格"><span aria-hidden="true">▦</span> 网格</button><button class="tool-button" id="animateButton" aria-pressed="false" title="播放模型动画"><span aria-hidden="true">▷</span> 动画</button><span class="tools-divider"></span><button class="tool-button" id="screenshotButton" title="保存当前视口截图"><span aria-hidden="true">▣</span> 截图</button></div>
-        <div class="viewport-bottom"><div class="camera-bar" aria-label="相机视角"><button data-view="perspective" class="active">透视</button><button data-view="front">正面</button><button data-view="side">侧面</button><button data-view="top">俯视</button><span class="camera-divider"></span><button data-view="cockpit">驾驶舱</button><button data-view="engine">发动机</button></div><button id="exportButton" class="export-button"><span aria-hidden="true">↧</span> 导出 GLB</button></div>
+        <div class="viewport-toolbar" role="group" aria-label="模型视图工具">
+          <label class="camera-select-wrap"><select id="cameraViewSelect" aria-label="相机视角" disabled><option value="perspective">透视</option><option value="front">正面</option><option value="side">右侧</option><option value="top">俯视</option><option value="back">背面</option><option value="opposite-side">左侧</option><option value="bottom">仰视</option><option value="cockpit" hidden disabled>驾驶舱</option><option value="engine" hidden disabled>发动机</option><option value="custom" hidden disabled>自由</option></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></label>
+          <span class="viewport-toolbar-divider" aria-hidden="true"></span>
+          <div class="viewport-tool-actions" role="group" aria-label="显示工具">
+            <button class="viewport-tool-button" id="wireButton" type="button" aria-label="切换线框" aria-pressed="false" title="切换线框" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M12 3v9M4 16.5l8-4.5 8 4.5"/></svg></button>
+            <button class="viewport-tool-button" id="gridButton" type="button" aria-label="切换网格" aria-pressed="false" title="切换网格" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M9 3.5v17M15 3.5v17M3.5 9h17M3.5 15h17"/></svg></button>
+            <button class="viewport-tool-button" id="animateButton" type="button" aria-label="播放模型动画" aria-pressed="false" title="播放模型动画" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4.5 12 7.5-12 7.5v-15Z"/></svg></button>
+            <button class="viewport-tool-button" id="screenshotButton" type="button" aria-label="保存当前视口截图" title="保存当前视口截图" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6.5 9.5 4h5L16 6.5h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2h3Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+          </div>
+          <span class="viewport-toolbar-divider" aria-hidden="true"></span>
+          <button id="exportButton" class="export-button" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg><span id="exportButtonLabel">导出 GLB</span></button>
+        </div>
         <div id="creationOverlay" class="creation-overlay" hidden><div class="creation-visual"><canvas id="creationParticles" aria-hidden="true"></canvas></div><h2 id="creationTitle">正在建模</h2><p id="creationDescription">正在生成模型。</p><div class="creation-meta"><span id="creationActivity">正在处理</span><time id="creationElapsed"></time></div><button id="overlayStopButton">停止任务</button><button id="overlayApprovalButton" class="text-button" hidden>查看待确认操作</button></div>
       </section>
 

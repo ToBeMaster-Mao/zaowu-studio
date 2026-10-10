@@ -344,8 +344,7 @@ function loadModel(project, modelKey, revision = null) {
   renderParts();
   renderSelection();
   $('#geometryStats').innerHTML = '<span>正在载入模型…</span>';
-  $('#exportButton').disabled = true;
-  $('#resetViewButton').disabled = true;
+  for (const id of ['exportButton', 'resetViewButton', 'cameraViewSelect', 'wireButton', 'gridButton', 'animateButton', 'screenshotButton']) $(`#${id}`).disabled = true;
   if (!project.modelUrl) {
     state.iframe = null;
     $('#viewportMount').innerHTML = '<div class="stage-placeholder"><span class="large-cube">◇</span><p>上传参考图，开始创造你的模型</p></div>';
@@ -362,6 +361,26 @@ function loadModel(project, modelKey, revision = null) {
 function viewerCommand(type, data = {}) {
   if (!state.iframe) return;
   state.iframe.contentWindow.postMessage({ source: 'model-studio', type, ...data }, '*');
+}
+
+function syncCameraSelector() {
+  const select = $('#cameraViewSelect');
+  const view = state.camera?.view || 'perspective';
+  const preset = [...select.options].find(option => option.value === view && !option.disabled && !option.hidden);
+  const custom = select.querySelector('[value="custom"]');
+  custom.hidden = Boolean(preset);
+  select.value = preset ? view : 'custom';
+}
+
+function renderAnimationControl(available) {
+  const button = $('#animateButton');
+  button.disabled = !available;
+  if (!available) state.toggles.animate = false;
+  const playing = state.toggles.animate;
+  button.setAttribute('aria-pressed', String(playing));
+  button.title = !available ? '此模型暂无动画' : playing ? '暂停模型动画' : '播放模型动画';
+  button.setAttribute('aria-label', button.title);
+  button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${playing ? '<path d="M8 5v14M16 5v14"/>' : '<path d="m8 4.5 12 7.5-12 7.5v-15Z"/>'}</svg>`;
 }
 
 function viewerRpc(type, data = {}, timeout = 15000) {
@@ -405,13 +424,14 @@ window.addEventListener('message', event => {
     // A single-category model (for example, a lamp) should expose its parts immediately.
     const categories = [...new Set(state.parts.map(part => part.category || 'details'))];
     if (categories.length === 1) state.openCategories.add(categories[0]);
-    $('[data-view="cockpit"]').hidden = !categories.includes('cockpit');
-    $('[data-view="engine"]').hidden = !categories.includes('engines');
-    $('.camera-divider').hidden = !categories.includes('cockpit') && !categories.includes('engines');
-    $('#geometryStats').innerHTML = `<div><span>三角面</span><b>${Number(data.stats?.triangles || 0).toLocaleString()}</b></div><div><span>顶点</span><b>${Number(data.stats?.vertices || 0).toLocaleString()}</b></div>`;
-    $('#exportButton').disabled = false;
-    $('#resetViewButton').disabled = false;
-    $('#animateButton').disabled = !data.animationCount;
+    for (const [view, category] of [['cockpit', 'cockpit'], ['engine', 'engines']]) {
+      const option = $(`#cameraViewSelect option[value="${view}"]`);
+      option.hidden = option.disabled = !categories.includes(category);
+    }
+    syncCameraSelector();
+    $('#geometryStats').innerHTML = `<span class="geometry-stat"><span>三角面</span><b>${Number(data.stats?.triangles || 0).toLocaleString()}</b></span><span class="geometry-stat"><span>顶点</span><b>${Number(data.stats?.vertices || 0).toLocaleString()}</b></span>`;
+    for (const id of ['exportButton', 'resetViewButton', 'cameraViewSelect', 'wireButton', 'gridButton', 'screenshotButton']) $(`#${id}`).disabled = false;
+    renderAnimationControl(Boolean(data.animationCount));
     for (const [partId, patch] of Object.entries(state.displayOverrides)) if (state.parts.some(part => part.id === partId)) viewerCommand('setPart', { partId, ...patch });
     for (const [type, value] of Object.entries(state.toggles)) viewerCommand(type, { value });
     renderParts();
@@ -435,7 +455,7 @@ window.addEventListener('message', event => {
     renderSelection();
   } else if (data.type === 'camera') {
     state.camera = { position: data.position, target: data.target, up: data.up, view: data.view };
-    $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === data.view));
+    syncCameraSelector();
   } else if (data.type === 'error') {
     toast(data.message || '模型无法预览', true);
     if (!state.ready) {
@@ -623,7 +643,7 @@ function renderPreviewBanner() {
     $('#previewVersionLabel').title = revision.label || '模型版本';
     $('#previewVersionHint').textContent = `${timeLabel(revision.createdAt)} · 当前工作版本未改变`;
   }
-  $('#exportButton').innerHTML = `<span aria-hidden="true">↧</span> ${revision ? `导出 V${revisionNumber(revision.id)}` : '导出 GLB'}`;
+  $('#exportButtonLabel').textContent = revision ? `导出 V${revisionNumber(revision.id)}` : '导出 GLB';
 }
 
 async function previewVersion(revisionId) {
@@ -916,14 +936,19 @@ $('#messages').addEventListener('scroll', () => {
   const node = $('#messages');
   if (node.scrollHeight - node.scrollTop - node.clientHeight < 70) $('#newMessagesButton').hidden = true;
 });
-$$('[data-view]').forEach(button => { button.onclick = () => viewerCommand('view', { view: button.dataset.view }); });
+$('#cameraViewSelect').onchange = event => { if (state.ready) viewerCommand('view', { view: event.target.value }); };
 [['wireButton', 'wireframe'], ['gridButton', 'grid'], ['animateButton', 'animate']].forEach(([id, type]) => {
-  $(`#${id}`).onclick = () => { state.toggles[type] = !state.toggles[type]; $(`#${id}`).setAttribute('aria-pressed', String(state.toggles[type])); viewerCommand(type, { value: state.toggles[type] }); };
+  $(`#${id}`).onclick = () => {
+    state.toggles[type] = !state.toggles[type];
+    $(`#${id}`).setAttribute('aria-pressed', String(state.toggles[type]));
+    if (type === 'animate') renderAnimationControl(true);
+    viewerCommand(type, { value: state.toggles[type] });
+  };
 });
 $('#exportButton').onclick = async () => {
   const button = $('#exportButton');
   button.disabled = true;
-  button.textContent = '正在导出…';
+  $('#exportButtonLabel').textContent = '正在导出…';
   const name = safeFilename(`${state.project?.name || 'model'}${state.previewRevision ? `-V${revisionNumber(state.previewRevision.id)}` : ''}`);
   const exportingProjectId = state.project.id;
   try {
