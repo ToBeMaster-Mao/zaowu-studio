@@ -7,8 +7,9 @@ const logoPaths = [
 ];
 
 const clamp = value => Math.max(0, Math.min(1, value));
-const smooth = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
 const random = (min, max) => min + Math.random() * (max - min);
+const cycleDuration = 4.8;
+const initialPhase = 0.45;
 
 /** A low-cost, disposable logo animation shared by loading and model creation. */
 export function createLogoParticles(canvas, { maxLogoSize = 112 } = {}) {
@@ -25,8 +26,8 @@ export function createLogoParticles(canvas, { maxLogoSize = 112 } = {}) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let active = false, destroyed = false, frame = 0;
   let width = 0, height = 0, ratio = 0, logoSize = 0;
-  // Show the mark immediately even when the model loads before a full cycle.
-  let elapsed = 2.2, previousTime = 0, particles = [];
+  // Start close to the silhouette, already moving, so even a short load feels alive.
+  let elapsed = initialPhase, previousTime = 0, particles = [];
 
   function paintLogo(target, size, x = 0, y = 0) {
     target.save();
@@ -70,12 +71,10 @@ export function createLogoParticles(canvas, { maxLogoSize = 112 } = {}) {
 
   function draw(time) {
     context.clearRect(0, 0, width, height);
-    const cycle = (time % 6.8) / 6.8;
-    // Gather, hold the readable mark, disperse, then pause before gathering again.
+    const cycle = (time % cycleDuration) / cycleDuration;
+    // Ease continuously between the readable mark and a cloud, without static holds.
     // Reduced motion keeps the same dotted mark, without replacing it with a solid logo.
-    const dispersion = reducedMotion.matches ? 0 : cycle < 0.32 ? 1 - smooth(cycle / 0.32)
-      : cycle < 0.51 ? 0
-        : cycle < 0.87 ? smooth((cycle - 0.51) / 0.36) : 1;
+    const dispersion = reducedMotion.matches ? 0 : (1 - Math.cos(cycle * Math.PI * 2)) / 2;
     for (const particle of particles) {
       const scatter = clamp(dispersion + Math.sin(dispersion * Math.PI) * particle.lag);
       const drift = Math.sin(time * 0.7 + particle.phase) * 3.5 * scatter;
@@ -138,7 +137,7 @@ export function createLogoParticles(canvas, { maxLogoSize = 112 } = {}) {
     if (destroyed || Boolean(value) === active) return;
     active = Boolean(value);
     if (active) {
-      elapsed = 2.2;
+      elapsed = initialPhase;
       observer.observe(parent);
       document.addEventListener('visibilitychange', resume);
       reducedMotion.addEventListener('change', resume);

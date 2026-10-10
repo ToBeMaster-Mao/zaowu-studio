@@ -103,21 +103,49 @@ test('reduced motion renders a static particle logo and changing the preference 
   logo.destroy();
 });
 
-test('the animated mark disperses and gathers without drawing solid paths or adding animation loops', t => {
+function nextFrame(env, time) {
+  assert.equal(env.frames.size, 1, 'only one animation loop is scheduled');
+  const [id, callback] = env.frames.entries().next().value;
+  env.frames.delete(id);
+  callback(time);
+}
+
+function averageTravel(dots, reference) {
+  return dots.reduce((distance, dot, index) => distance + Math.hypot(dot.x - reference[index].x, dot.y - reference[index].y), 0) / dots.length;
+}
+
+test('a newly activated loader visibly moves within its first 400 ms', t => {
+  t.mock.method(Math, 'random', () => 0.5);
   const env = environment(t);
   const logo = createLogoParticles(env.canvas);
   logo.setActive(true);
+  const initialDots = structuredClone(env.context.dots);
+  for (let time = 1000; time <= 1400; time += 50) nextFrame(env, time);
+  assert.ok(averageTravel(env.context.dots, initialDots) > 4, 'short loads must not sit in a stationary logo phase');
+  logo.destroy();
+});
+
+test('the animated mark repeatedly gathers and disperses without solid paths or extra animation loops', t => {
+  t.mock.method(Math, 'random', () => 0.5);
+  const env = environment(t, true);
+  const logo = createLogoParticles(env.canvas);
+  logo.setActive(true);
   const gatheredDots = structuredClone(env.context.dots);
-  function step(time) {
-    assert.equal(env.frames.size, 1);
-    const [id, callback] = env.frames.entries().next().value;
-    env.frames.delete(id);
-    callback(time);
+  env.media.matches = false;
+  env.media.emit('change');
+  let gathers = 0, dispersals = 0, wasGathered = false, wasDispersed = false;
+  for (let time = 1000; time <= 11000; time += 50) {
+    nextFrame(env, time);
+    const travel = averageTravel(env.context.dots, gatheredDots);
+    const isGathered = travel < 0.5;
+    const isDispersed = travel > 25;
+    if (isGathered && !wasGathered) gathers++;
+    if (isDispersed && !wasDispersed) dispersals++;
+    wasGathered = isGathered;
+    wasDispersed = isDispersed;
   }
-  for (let time = 1000; time <= 4100; time += 100) step(time);
-  assert.notDeepEqual(env.context.dots, gatheredDots, 'particles move apart during the cycle');
-  for (let time = 4200; time <= 8000; time += 100) step(time);
-  assert.deepEqual(env.context.dots, gatheredDots, 'particles return to the logo silhouette');
+  assert.ok(gathers >= 2, 'the silhouette becomes readable again on each cycle');
+  assert.ok(dispersals >= 2, 'particles visibly disperse on each cycle');
   assert.equal(env.context.paths, 0);
   logo.destroy();
 });

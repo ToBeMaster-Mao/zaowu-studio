@@ -21,7 +21,7 @@ export function createPreviewMaterials(root) {
   function whiteMaterial(original) {
     if (!clayMaterials.has(original)) {
       clayMaterials.set(original, new THREE.MeshStandardMaterial({
-        color: '#f5f5f5', roughness: .8, metalness: 0,
+        color: '#c7cbcf', roughness: .85, metalness: 0,
         side: original.side, flatShading: Boolean(original.flatShading),
         polygonOffset: original.polygonOffset, polygonOffsetFactor: original.polygonOffsetFactor,
         polygonOffsetUnits: original.polygonOffsetUnits,

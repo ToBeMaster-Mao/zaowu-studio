@@ -224,7 +224,7 @@ function setBackground(value) {
   background = value === 'light' ? 'light' : 'dark';
   const light = background === 'light';
   document.documentElement.dataset.background = background;
-  if (scene) scene.background = new THREE.Color(light ? '#ffffff' : '#16191d');
+  if (scene) scene.background = new THREE.Color(light ? '#e9ecef' : '#16191d');
   if (ground) {
     ground.material.color.set(light ? '#53606a' : '#020306');
     ground.material.opacity = light ? .18 : .32;

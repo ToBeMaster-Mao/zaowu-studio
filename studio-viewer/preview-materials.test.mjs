@@ -14,7 +14,7 @@ test('white preview strips textures, vertex tints and transmission, then restore
   root.add(first, second);
   const preview = createPreviewMaterials(root);
   preview.setClay(true);
-  assert.equal(first.material.color.getHexString(), 'f5f5f5');
+  assert.equal(first.material.color.getHexString(), 'c7cbcf');
   assert.equal(first.material.map, null);
   assert.equal(first.material.normalMap, null);
   assert.equal(first.material.vertexColors, false);
@@ -39,9 +39,9 @@ test('editing a white part changes its source material without recoloring other 
   const preview = createPreviewMaterials(root);
   preview.setClay(true);
   preview.setColor(first, '#ffaa22');
-  assert.equal(first.material.color.getHexString(), 'f5f5f5');
+  assert.equal(first.material.color.getHexString(), 'c7cbcf');
   assert.deepEqual(summarizeMaterialColor(first, preview.getOriginalMaterial), { color: '#ffaa22', colorState: 'uniform' });
-  assert.equal(first.material.color.getHexString(), 'f5f5f5');
+  assert.equal(first.material.color.getHexString(), 'c7cbcf');
   preview.setClay(false);
   assert.equal(first.material.color.getHexString(), 'ffaa22');
   assert.strictEqual(second.material, original);

@@ -23,7 +23,7 @@
 .background-options button[aria-pressed="true"] { color: #d9edb4; background: #d3f28a0c; border-color: #d3f28a44; }
 .background-swatch { width: 13px; height: 13px; border-radius: 50%; border: 1px solid #ffffff40; }
 .background-swatch.dark { background: #16191d; }
-.background-swatch.light { background: #fff; }
+.background-swatch.light { background: #e9ecef; }
 .display-switch-row { position: relative; cursor: pointer; }
 .display-switch-row input { position: absolute; right: 0; width: 36px; height: 22px; opacity: 0; margin: 0; cursor: pointer; }
 .display-switch { width: 36px; height: 22px; flex: none; border: 1px solid #ffffff17; border-radius: 20px; background: #3d464e; pointer-events: none; transition: background .15s; }
@@ -35,14 +35,14 @@
 .display-switch-row input:disabled { cursor: default; }
 .stage #displaySettingsButton[aria-expanded="true"] { color: #d3f28a; border-color: #d3f28a44; background: #d3f28a0b; }
 
-.stage[data-background="light"] { background: #fff; }
+.stage[data-background="light"] { background: #e9ecef; }
 .stage[data-background="light"] .stage-project-info > #stageProjectName { color: #303941; }
 .stage[data-background="light"] .geometry-stats,
 .stage[data-background="light"] .geometry-stats b { color: #65727d; }
 .stage[data-background="light"] .stage-action-button { color: #64717b; border-color: #28333c1c; background: #f4f6f7; }
 .stage[data-background="light"] .stage-action-button:hover:not(:disabled) { color: #24343c; background: #e9eef0; }
 .stage[data-background="light"] #displaySettingsButton[aria-expanded="true"] { color: #3f5628; border-color: #79964c66; background: #eff5e4; }
-.stage[data-background="light"] .creation-overlay { background: #fff; }
+.stage[data-background="light"] .creation-overlay { background: #e9ecef; }
 .stage[data-background="light"] .creation-overlay::before { background: none; }
 .stage[data-background="light"] .creation-visual canvas { filter: brightness(.66) saturate(1.25); }
 .stage[data-background="light"] .creation-meta { color: #465141; }
