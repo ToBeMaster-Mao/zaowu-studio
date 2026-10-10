@@ -22,38 +22,38 @@ export function describeTask({
 
   if (submitting) {
     return result('submitting', generating ? '正在准备建模' : '正在提交', '正在发送参考图和本次要求，请稍候。', {
-      busy: true, overlay: generating, tone: 'active',
+      busy: true, overlay: true, tone: 'active',
     });
   }
 
   // Preview checks run locally, so they remain useful even if the agent disconnects.
   if (status === 'validating' || pendingRevision) {
     return result('validating', '正在校验预览', '正在加载新版本，检查通过后会更新展示区。', {
-      busy: true, overlay: generating, tone: 'active',
+      busy: true, overlay: true, tone: 'active',
     });
   }
 
   if (active && !connected) {
     return result('disconnected', '连接已中断', '暂时无法获取任务状态；任务是否结束尚未确认，请重新连接。', {
-      busy: true, overlay: generating, tone: 'warning',
+      busy: true, overlay: true, tone: 'warning',
     });
   }
 
   if (status === 'starting') {
     return result('submitting', generating ? '正在准备建模' : '正在准备处理', '本地 Agent 正在启动本次任务，请稍候。', {
-      busy: true, overlay: generating, tone: 'active',
+      busy: true, overlay: true, tone: 'active',
     });
   }
 
   if (active && (stopping || status === 'interrupting' || status === 'stopping')) {
     return result('stopping', '正在停止', '停止请求已发送，正在等待本地 Agent 确认。', {
-      busy: true, overlay: generating, tone: 'warning',
+      busy: true, overlay: true, tone: 'warning',
     });
   }
 
   if (active && (awaitingApproval || status === 'awaiting_approval')) {
     return result('approval', '等待你的确认', '请处理下方的操作许可，确认后任务会继续。', {
-      busy: true, overlay: generating, canStop: true, tone: 'warning',
+      busy: true, overlay: true, canStop: true, tone: 'warning',
     });
   }
 
@@ -62,7 +62,7 @@ export function describeTask({
       typeof activity === 'string' && activity.trim() ? activity.trim() : generating
         ? '正在根据参考图创建模型，完成后会自动加载预览。'
         : 'Agent 正在处理你的要求，回复和进展会显示在对话中。',
-      { busy: true, overlay: generating, canStop: true, tone: 'active' });
+      { busy: true, overlay: true, canStop: true, tone: 'active' });
   }
 
   if (uploading) {

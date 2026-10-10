@@ -70,13 +70,10 @@ export function createLogoParticles(canvas, { maxLogoSize = 112 } = {}) {
 
   function draw(time) {
     context.clearRect(0, 0, width, height);
-    if (reducedMotion.matches) {
-      paintLogo(context, logoSize, (width - logoSize) / 2, (height - logoSize) / 2);
-      return;
-    }
     const cycle = (time % 6.8) / 6.8;
     // Gather, hold the readable mark, disperse, then pause before gathering again.
-    const dispersion = cycle < 0.32 ? 1 - smooth(cycle / 0.32)
+    // Reduced motion keeps the same dotted mark, without replacing it with a solid logo.
+    const dispersion = reducedMotion.matches ? 0 : cycle < 0.32 ? 1 - smooth(cycle / 0.32)
       : cycle < 0.51 ? 0
         : cycle < 0.87 ? smooth((cycle - 0.51) / 0.36) : 1;
     for (const particle of particles) {

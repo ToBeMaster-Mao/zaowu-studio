@@ -13,8 +13,8 @@
     #notice-text{position:absolute;top:18px;left:50%;transform:translateX(-50%);display:grid;place-items:center;width:max-content;max-width:calc(100% - 480px);min-height:38px;overflow-wrap:anywhere}
     .loading-logo{position:relative;width:min(100%,640px);height:min(100%,490px);min-height:0}
     .loading-logo canvas{position:absolute;inset:0;display:block;width:100%;height:100%;opacity:0}
-    .loading-logo img{position:absolute;width:256px;height:256px;max-width:42%;max-height:53%;object-fit:contain;inset:0;margin:auto}
-    .loading-logo.is-animated canvas{opacity:1}.loading-logo.is-animated img{visibility:hidden}
+    .loading-logo svg{position:absolute;width:256px;height:256px;max-width:42%;max-height:53%;inset:0;margin:auto}
+    .loading-logo.is-animated canvas{opacity:1}.loading-logo.is-animated svg{visibility:hidden}
     @media (max-width:899px){#notice{padding:142px 16px 24px}#notice-text{top:76px;max-width:calc(100% - 32px)}}
     @media (max-height:550px){#notice{padding-bottom:12px}}
     #notice.error{background:#16191def;color:#efb4a6;padding:80px 24px 24px}
@@ -77,8 +77,7 @@
 </head>
 <body>
   <div id="viewport" aria-label="可旋转、缩放并点选部件的三维模型视口"></div>
-  <div id="notice" role="status"><div id="loading-logo" class="loading-logo" aria-hidden="true"><img src="/studio-web/brand/logo-mark.svg" alt="" width="256" height="256"><canvas id="loading-particles"></canvas></div><div id="notice-text">正在载入模型…</div></div>
+  <div id="notice" role="status"><div id="loading-logo" class="loading-logo" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><defs><pattern id="logo-dots" width="1.5" height="1.5" patternUnits="userSpaceOnUse"><circle cx=".5" cy=".5" r=".34" fill="#D3F28A"/></pattern><pattern id="logo-dots-light" width="1.5" height="1.5" patternUnits="userSpaceOnUse"><circle cx=".5" cy=".5" r=".34" fill="#EDFCCB"/></pattern><pattern id="logo-dots-dark" width="1.5" height="1.5" patternUnits="userSpaceOnUse"><circle cx=".5" cy=".5" r=".34" fill="#9EC65B"/></pattern></defs><path d="M8 7H55L61 19L40 36L29 28L44 17H2L8 7Z M24 28L35 36L20 48H62L56 58H9L3 46L24 28Z" fill="url(#logo-dots)"/><path d="M55 7L61 19L50 18L44 17L55 7Z" fill="url(#logo-dots-light)"/><path d="M3 46L9 58L20 48L14 47L3 46Z" fill="url(#logo-dots-dark)"/></svg><canvas id="loading-particles"></canvas></div><div id="notice-text">正在载入模型…</div></div>
   <script type="module" src="/studio-viewer/loading-logo.js"></script>
-  <script type="module" src="/studio-viewer/viewport.js"></script>
 </body>
 </html>

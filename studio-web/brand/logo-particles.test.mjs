@@ -12,25 +12,28 @@ function environment(t, reduced = false) {
   const media = Object.assign(new Target(), { matches: reduced });
   const frames = new Map();
   let nextFrame = 0, observer;
-  const context = {
-    clears: 0, paths: 0,
-    save() {}, restore() {}, translate() {}, scale() {}, setTransform() {}, beginPath() {}, arc() {},
+  const makeContext = () => ({
+    clears: 0, paths: 0, dots: [],
+    save() {}, restore() {}, translate() {}, scale() {}, setTransform() {}, beginPath() {},
+    arc(x, y, radius) { this.dots.push({ x, y, radius }); },
     fill(path) { if (path) this.paths++; },
-    clearRect() { this.clears++; },
+    clearRect() { this.clears++; this.dots = []; },
     getImageData() { return { data: new Uint8ClampedArray(128 * 128 * 4).fill(255) }; },
-  };
+  });
+  const context = makeContext();
   class Canvas {
     width = 300;
     height = 150;
     parentElement = { getBoundingClientRect: () => ({ width: 280, height: 200 }) };
-    getContext() { return context; }
+    constructor(paintContext = context) { this.context = paintContext; }
+    getContext() { return this.context; }
   }
   class Observer {
     constructor(callback) { this.callback = callback; observer = this; }
     observe() { this.connected = true; }
     disconnect() { this.connected = false; }
   }
-  const doc = Object.assign(new Target(), { hidden: false, createElement: () => new Canvas() });
+  const doc = Object.assign(new Target(), { hidden: false, createElement: () => new Canvas(makeContext()) });
   const win = Object.assign(new Target(), { devicePixelRatio: 3, matchMedia: () => media });
   const globals = {
     HTMLCanvasElement: Canvas, Path2D: class {}, ResizeObserver: Observer, document: doc, window: win,
@@ -81,17 +84,40 @@ test('hidden tabs suspend the animation and resume with only one frame scheduled
   logo.destroy();
 });
 
-test('reduced motion renders a static logo and changing the preference cancels animation', t => {
+test('reduced motion renders a static particle logo and changing the preference cancels animation', t => {
   const env = environment(t, true);
   const logo = createLogoParticles(env.canvas);
   logo.setActive(true);
   assert.equal(env.frames.size, 0);
-  assert.ok(env.context.paths >= 4, 'the vector logo is painted');
+  assert.equal(env.context.paths, 0, 'solid logo paths never appear on the visible canvas');
+  assert.ok(env.context.dots.length > 500, 'the mark remains composed of individual particles');
+  const staticDots = structuredClone(env.context.dots);
+  env.observer.callback();
+  assert.deepEqual(env.context.dots, staticDots, 'the dots stay still with reduced motion');
   env.media.matches = false;
   env.media.emit('change');
   assert.equal(env.frames.size, 1);
   env.media.matches = true;
   env.media.emit('change');
   assert.equal(env.frames.size, 0);
+  logo.destroy();
+});
+
+test('the animated mark disperses and gathers without drawing solid paths or adding animation loops', t => {
+  const env = environment(t);
+  const logo = createLogoParticles(env.canvas);
+  logo.setActive(true);
+  const gatheredDots = structuredClone(env.context.dots);
+  function step(time) {
+    assert.equal(env.frames.size, 1);
+    const [id, callback] = env.frames.entries().next().value;
+    env.frames.delete(id);
+    callback(time);
+  }
+  for (let time = 1000; time <= 4100; time += 100) step(time);
+  assert.notDeepEqual(env.context.dots, gatheredDots, 'particles move apart during the cycle');
+  for (let time = 4200; time <= 8000; time += 100) step(time);
+  assert.deepEqual(env.context.dots, gatheredDots, 'particles return to the logo silhouette');
+  assert.equal(env.context.paths, 0);
   logo.destroy();
 });

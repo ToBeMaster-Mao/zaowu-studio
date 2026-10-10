@@ -23,10 +23,23 @@ test('image modeling progresses from ready through submission, generation and pr
   assert.match(complete.description, /通过检查/);
 });
 
-test('ordinary conversation has processing, approval and real stop states without a modeling overlay', () => {
+test('conversation edits cover the previous model until processing or preview validation finishes', () => {
   const task = { status: 'running', intent: 'chat' };
   assert.equal(describeTask({ task }).phase, 'working');
-  assert.equal(describeTask({ task }).overlay, false);
+  assert.equal(describeTask({ task }).overlay, true);
+  for (const status of ['starting', 'running', 'validating']) {
+    assert.equal(describeTask({ task: { ...task, status } }).overlay, true, status);
+  }
+  assert.equal(describeTask({ task, submitting: true }).overlay, true);
+  assert.equal(describeTask({ task, awaitingApproval: true }).overlay, true);
+  assert.equal(describeTask({ task, stopping: true }).overlay, true);
+  assert.equal(describeTask({ task, connected: false }).overlay, true);
+  assert.equal(describeTask({ task: { ...task, status: 'completed' }, pendingRevision: true }).overlay, true);
+  for (const status of ['completed', 'failed', 'interrupted', 'cancelled']) {
+    assert.equal(describeTask({ task: { ...task, status } }).overlay, false, status);
+  }
+  assert.equal(describeTask({ uploading: true }).overlay, false);
+  assert.equal(describeTask({ connected: false }).overlay, false);
   assert.equal(describeTask({ task, awaitingApproval: true }).phase, 'approval');
   assert.equal(describeTask({ task, stopping: true }).phase, 'stopping');
   assert.equal(describeTask({ task, stopping: true }).canStop, false);

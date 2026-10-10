@@ -183,8 +183,6 @@ function setProject(project, { forceLoad = false, keepViewport = false } = {}) {
   renderTask();
   renderVersions();
   renderSelection();
-  $('#stageNote').hidden = !project.pendingRevisionId;
-  $('#stageNote').textContent = '新版本正在进行预览校验';
   const modelKey = `${project.id}:${project.modelUrl}`;
   renderPreviewBanner();
   if (state.previewRevision) return;
@@ -325,6 +323,8 @@ function renderTask() {
   const showCreation = feedback.overlay && !viewingHistory();
   $('#creationOverlay').hidden = !showCreation;
   $('.stage').classList.toggle('is-creating', showCreation);
+  $('#viewportMount').inert = showCreation;
+  $('#resetViewButton').disabled = !state.ready || showCreation;
   $('#creationOverlay').dataset.phase = feedback.phase;
   $('#creationActivity').textContent = ({ submitting: '准备中', validating: '正在载入预览', approval: '等待确认', stopping: '正在停止', disconnected: '等待恢复连接' })[feedback.phase] || '正在创作';
   $('#overlayApprovalButton').hidden = feedback.phase !== 'approval';
@@ -465,6 +465,7 @@ window.addEventListener('message', event => {
     for (const [type, value] of Object.entries(state.toggles)) viewerCommand(type, { value });
     renderParts();
     renderSelection();
+    renderTask();
     void validateRevision(true);
   } else if (data.type === 'selection') {
     state.selection = data.selection || null;
