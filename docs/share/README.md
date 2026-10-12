@@ -9,7 +9,7 @@
 封面为内置生图工具生成的概念图；正文效果图来自实际工作台。模型面数不代表质量评分，几何与预览检查也不代表建模质量验证。
 
 - [团队仓库](http://192.168.17.55:3001/3k-development/zaowu-studio)：需要内网与团队访问权限。
-- [GitHub](https://github.com/ToBeMaster-Mao/zaowu-studio)：当前需要相应仓库权限。
+- [GitHub](https://github.com/ToBeMaster-Mao/zaowu-studio)：MIT 开源仓库，可公开访问。
 - 实现证据基线：`1db5ff49c1946a65b05d145e4741acb753461933`。
 
 ## 发布材料

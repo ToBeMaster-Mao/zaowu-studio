@@ -1,17 +1,48 @@
 # 造物 Studio · Zaowu Studio
 
-连接本地 Codex CLI 的 Three.js 建模工作台。上传参考图、直接开始建模，或用对话继续修改；在同一个界面预览几何、检查部件、浏览版本并导出 GLB。
+[简体中文](README.md) · [English](README.en.md)
 
-[图文介绍与实际模型截图](docs/share/README.md) · [分享封面与素材说明](docs/share/package-metadata.txt)
+**MIT 开源的本地 Three.js 建模工作台。** 让 Codex 根据参考图片和文字编写模型代码，在浏览器里预览、按部件继续修改、浏览版本并导出 GLB。模型的构造逻辑保留在可阅读、可修改的 `model.js` 中。
 
-**状态：v0.1.0，实验性本地应用。** 当前生成方式是让 Codex 编写 Three.js 几何代码，适合规则物体、建筑体块和参数化模型。它不包含图生 3D 模型权重，也不保证写实人物、复杂有机形体或照片级还原。
+[GitHub 源码](https://github.com/ToBeMaster-Mao/zaowu-studio) · [MIT License](LICENSE) · [图文介绍与实际模型截图](docs/share/README.md) · [分享素材说明](docs/share/package-metadata.txt)
+
+**状态：v0.1.0，实验性本地应用。** 造物通过本地 Codex CLI 连接模型服务，让 Agent 编写 Three.js 几何代码；项目不包含专用图生 3D 模型权重。适合尝试器物、规则物体、建筑体块和参数化模型。写实人物、复杂有机形体、生产级拓扑与照片级还原仍是短板，不承诺替代 Tripo、Meshy、Rodin 等专用服务。
+
+## 为什么用代码建模
+
+当形状能拆成部件、尺寸、曲线或重复结构时，可以把它们表达为代码，再按要求继续调整。造物把这个过程放进一个可预览、可回退的工作台：
+
+- **保留可编辑源码**：Agent 修改 `model.js`；你也可以直接阅读和修改模型的构造逻辑。
+- **带着上下文修改**：对话可附上选中部件、当前视角、截图和多组参考图片，便于描述局部修改。
+- **检查与回退**：查看部件、调整基础属性，预览历史版本；新版本通过预览校验后更新当前模型。
+- **交付与复用**：导出当前或历史版本的 GLB；保留源码和工程数据，继续迭代。
+
+程序化表达提供了修改入口，不等于自动获得正确比例、真实材质或生产可用资产。项目文件保存在本地，AI 推理仍使用你为 Codex 配置的服务，详见[本地数据与隐私](#本地数据与隐私)。
+
+## 实际工作台截图
+
+以下图片来自实际工作台中的模型预览，展示界面与示例结果；它们不是对任意输入效果的承诺，截图中的面数也不是质量评分。
+
+**茶壶：模型预览与部件检查**
+
+![造物 Studio 中的茶壶模型和部件列表](docs/share/assets/teapot-workspace.jpg)
+
+**广州塔：建筑结构示例**
+
+![造物 Studio 中的广州塔模型预览](docs/share/assets/canton-tower.jpg)
 
 ## 快速开始
 
 需要 Node.js **22 或更新版本**、支持 WebGL 的现代浏览器，以及已安装并完成登录的 Codex CLI。Windows、macOS、Linux 使用相同的 npm 命令。
 
 1. 按 [Codex CLI 官方安装说明](https://learn.chatgpt.com/docs/codex/cli)安装 CLI，在终端运行 `codex login` 完成登录。登录方式由 Codex 管理，参见[官方身份验证说明](https://learn.chatgpt.com/docs/auth)。
-2. 下载仓库源码或克隆仓库，进入 `zaowu-studio` 文件夹。
+2. 下载[仓库源码](https://github.com/ToBeMaster-Mao/zaowu-studio)或克隆仓库，进入 `zaowu-studio` 文件夹：
+
+```sh
+git clone https://github.com/ToBeMaster-Mao/zaowu-studio.git
+cd zaowu-studio
+```
+
 3. 运行：
 
 ```sh
@@ -45,6 +76,29 @@ STUDIO_PORT=4180 npm start
 ```
 
 服务监听本机回环地址。当前版本不用于直接暴露到公网。
+
+## 架构与工作流程
+
+浏览器工作台负责图片、对话、任务状态和项目操作；独立的 sandbox iframe 负责 Three.js 预览。Node.js 服务管理本地工程，通过 Codex 的 `app-server` 与 Agent 通信，并使用 HTTP / SSE 将结果和进展送回页面。
+
+```mermaid
+flowchart LR
+  UI["浏览器工作台"] <-->|HTTP / SSE| Server["本地 Node.js 服务"]
+  UI <-->|postMessage| Viewer["sandbox iframe · Three.js 预览"]
+  Server <-->|app-server| Codex["本地 Codex CLI"]
+  Codex <--> Model["用户配置的模型服务"]
+  Server <--> Files["本地项目、图片、源码与版本"]
+  Codex -->|读取上下文、修改 model.js| Files
+  Server -->|提供模型源码| Viewer
+```
+
+1. 选择项目和本轮参考图，开始新主体建模，或输入针对当前模型的修改要求。
+2. 服务端校验图片与请求，整理 `task-context.json`；局部修改可附带选中部件、视角和当前截图。
+3. Codex 读取工程约定、Skill 和任务上下文，修改 `model.js`；进展与需要确认的操作显示在工作台。
+4. 任务结束后，服务检查源码变化；有新模型时建立待校验版本，并让视口加载预览。
+5. 新版本通过预览检查后成为可用版本；校验失败时保留上一有效模型。继续按部件修改，或导出 GLB。
+
+这条流程检查模型能否加载和预览，不会自动判定外观还原程度、工程精度或拓扑质量。项目存储与预览在本机完成，Codex 的模型调用遵循其配置。
 
 ## 创建与继续修改
 
@@ -146,10 +200,14 @@ npm run test:ui
 
 ## 当前边界
 
+更适合从可描述的部件、尺寸和重复结构入手，例如器物、规则物体、建筑体块与参数化形状。参考图片未显示的结构需要近似处理；这里没有从单张照片恢复真实完整几何的保证。
+
 同一时刻运行一个建模任务，项目以单个 `model.js` 为入口。尚未提供账号系统、多人协作、计费、公共托管、专用图片转 3D 推理服务、自动绑骨或完整 DCC 编辑能力。高面数不等于高质量，人物比例、衣物结构、贴图和拓扑仍需要专门的资产流程。
+
+写实人物与复杂有机模型通常需要额外的建模、重拓扑、UV、材质、绑定和资产验证工作。造物不承诺直接产出生产级拓扑，也不承诺替代 Tripo、Meshy、Rodin 或专业 DCC 工具。
 
 浏览器隔离、输入校验和本地监听降低误操作范围，但不构成对任意恶意模型代码的安全承诺。运行来源未知的项目之前，应先审查源码和 Agent 权限。安全问题见 [SECURITY.md](SECURITY.md)，贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可
 
-本项目源码采用 [MIT License](LICENSE)。第三方依赖各自遵循其许可证；参考图片、用户输入和生成资产的权利不因本仓库许可证而自动改变。本项目不是 OpenAI、Three.js、Tripo 或 Meshy 的官方产品。
+本项目源码采用 [MIT License](LICENSE)。第三方依赖各自遵循其许可证；参考图片、用户输入和生成资产的权利不因本仓库许可证而自动改变。本项目不是 OpenAI、Three.js、Tripo、Meshy 或 Rodin 的官方产品。

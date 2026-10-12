@@ -23,4 +23,4 @@ GitHub：https://github.com/ToBeMaster-Mao/zaowu-studio
 重建命令：node scripts/pack-share.mjs
 封面提示词：cover-prompt.txt
 发布回执：community-post.txt
-访问说明：团队仓库需要内网与团队权限；GitHub 当前需要仓库访问权限。
+访问说明：团队仓库需要内网与团队权限；GitHub 已于 2026-10-12 公开，采用 MIT License。

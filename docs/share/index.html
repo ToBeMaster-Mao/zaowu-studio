@@ -103,27 +103,27 @@
         <pre><code>npm ci
 npm start</code></pre>
         <p>打开 <code>http://127.0.0.1:4174</code>，连接 Codex，新建工程并上传参考图。服务只绑定本机回环地址；团队仓库用于分发代码，不会自动变成所有人共用的在线建模服务。</p>
-        <div class="repo-box"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio">团队仓库 ↗<span>3k-development / zaowu-studio · 内网访问</span></a><a href="https://github.com/ToBeMaster-Mao/zaowu-studio">GitHub ↗<span>ToBeMaster-Mao / zaowu-studio · 当前需访问权限</span></a></div>
+        <div class="repo-box"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio">团队仓库 ↗<span>3k-development / zaowu-studio · 内网访问</span></a><a href="https://github.com/ToBeMaster-Mao/zaowu-studio">GitHub ↗<span>ToBeMaster-Mao / zaowu-studio · MIT 开源</span></a></div>
         <div class="note"><p><strong>验证记录</strong><br>本文实现依据固定到 <code>1db5ff4</code>：48 个 JavaScript 文件通过语法检查；自动测试 92 项通过、1 项真实 Codex 联动测试跳过。跳过项没有计为通过，实际截图也不代表所有输入、环境和建模质量都已覆盖。</p></div>
         <p class="source-line">可复核命令：<code>npm run check</code>、<code>npm test</code>；环境与脚本见<a href="#source-11">项目配置</a>。</p>
       </section>
 
       <aside class="evidence" aria-labelledby="evidence-title">
         <h2 id="evidence-title">实现依据</h2>
-        <p>链接指向固定提交 <code>1db5ff49c1946a65b05d145e4741acb753461933</code>，便于对照本文描述。内网仓库需要团队访问权限；GitHub 的同一提交也可供有权限的成员核对。</p>
+        <p>链接指向固定提交 <code>1db5ff49c1946a65b05d145e4741acb753461933</code>，便于对照本文描述。内网仓库需要团队访问权限；GitHub 的同一提交可公开核对。</p>
         <ol>
-          <li id="source-1"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L48">工程技能准备 · server.mjs:48</a></li>
-          <li id="source-2"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L62">外部编辑检测 · server.mjs:62</a></li>
-          <li id="source-3"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L91">任务结束与快照 · server.mjs:91</a>；<a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L163">上下文:163</a></li>
-          <li id="source-4"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/codex-bridge.mjs#L91">app-server 连接 · codex-bridge.mjs:91</a>；<a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/codex-bridge.mjs#L213">发起任务:213</a></li>
-          <li id="source-5"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/project-store.mjs#L215">候选快照 · project-store.mjs:215</a>；<a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/project-store.mjs#L246">回退保护:246</a></li>
-          <li id="source-6"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-web/app.js#L408">沙箱 iframe · app.js:408</a></li>
-          <li id="source-7"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L88">几何检查 · viewport.js:88</a>；<a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L389">加载:389</a>；<a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L465">首帧就绪:465</a></li>
-          <li id="source-8"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L294">原材质、姿态与导出 · viewport.js:294</a></li>
-          <li id="source-9"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/project-store.mjs#L275">历史版本恢复 · project-store.mjs:275</a></li>
-          <li id="source-10"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/exploded-view.js#L77">部件展开 · exploded-view.js:77</a></li>
-          <li id="source-11"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/package.json">运行环境与验证脚本 · package.json</a></li>
-          <li id="source-12"><a href="http://192.168.17.55:3001/3k-development/zaowu-studio/src/commit/1db5ff49c1946a65b05d145e4741acb753461933/studio-skill/model-studio/SKILL.md">建模约定 · model-studio/SKILL.md</a></li>
+          <li id="source-1"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L48">工程技能准备 · server.mjs:48</a></li>
+          <li id="source-2"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L62">外部编辑检测 · server.mjs:62</a></li>
+          <li id="source-3"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L91">任务结束与快照 · server.mjs:91</a>；<a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/server.mjs#L163">上下文:163</a></li>
+          <li id="source-4"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/codex-bridge.mjs#L91">app-server 连接 · codex-bridge.mjs:91</a>；<a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/codex-bridge.mjs#L213">发起任务:213</a></li>
+          <li id="source-5"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/project-store.mjs#L215">候选快照 · project-store.mjs:215</a>；<a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/project-store.mjs#L246">回退保护:246</a></li>
+          <li id="source-6"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-web/app.js#L408">沙箱 iframe · app.js:408</a></li>
+          <li id="source-7"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L88">几何检查 · viewport.js:88</a>；<a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L389">加载:389</a>；<a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L465">首帧就绪:465</a></li>
+          <li id="source-8"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/viewport.js#L294">原材质、姿态与导出 · viewport.js:294</a></li>
+          <li id="source-9"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-server/project-store.mjs#L275">历史版本恢复 · project-store.mjs:275</a></li>
+          <li id="source-10"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-viewer/exploded-view.js#L77">部件展开 · exploded-view.js:77</a></li>
+          <li id="source-11"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/package.json">运行环境与验证脚本 · package.json</a></li>
+          <li id="source-12"><a href="https://github.com/ToBeMaster-Mao/zaowu-studio/blob/1db5ff49c1946a65b05d145e4741acb753461933/studio-skill/model-studio/SKILL.md">建模约定 · model-studio/SKILL.md</a></li>
         </ol>
       </aside>
       <p class="footer">欢迎拿自己的参考图试一试。反馈时附上目标效果、实际结果和修改要求，更方便一起定位模型或交互上的问题。</p>
