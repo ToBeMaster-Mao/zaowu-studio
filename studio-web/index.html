@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/studio-web/display-settings.css">
   <link rel="stylesheet" href="/studio-web/topbar.css">
   <link rel="stylesheet" href="/studio-web/skill-install.css">
-  <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg?v=black-bg">
 </head>
 <body>
   <div class="app" id="app">
@@ -55,7 +55,7 @@
         <form id="composer" class="composer">
           <div id="selectionContext" class="selection-context" hidden></div>
           <div id="conversationImageGroups"></div>
-          <div class="conversation-attachment-toolbar"><button id="attachImagesButton" type="button" title="添加图片组，也可拖入或粘贴图片">＋ 添加图片组</button><span id="conversationImageCount"></span></div>
+          <div class="conversation-attachment-toolbar"><button id="attachImagesButton" type="button" title="添加图片，也可拖入或粘贴图片">＋ 添加图片</button><button id="addImageGroupButton" type="button" title="新建一个可命名的图片组">＋ 添加图片组</button><span id="conversationImageCount"></span></div>
           <label id="includeReferenceLabel" class="include-reference-label"><input id="includeProjectReferences" type="checkbox" checked>附带已选参考图 <span id="includedReferenceCount"></span></label>
           <input id="conversationImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple>
           <textarea id="promptInput" rows="3" placeholder="描述想修改的地方…" aria-label="建模要求" aria-keyshortcuts="Control+Enter Meta+Enter"></textarea>

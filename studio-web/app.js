@@ -1,7 +1,7 @@
 import { partLabel, partDetail } from './part-labels.js';
 import { createCreationParticles } from './creation-particles.js';
 import { describeTask, elapsedLabel } from './task-status.js';
-import { createConversationImages } from './conversation-images.js';
+import { createConversationImages, UNGROUPED_IMAGES_ID } from './conversation-images.js';
 import { enhanceSelect } from './select-menu.js';
 import { createSkillInstallGuide } from './skill-install.js';
 
@@ -57,7 +57,7 @@ const selectedReferences = () => (state.project?.references || []).filter(refere
 const viewingHistory = () => Boolean(state.previewRevision || state.previewLoadingId);
 const revisionNumber = id => (state.project?.versions || []).findIndex(version => version.id === id) + 1;
 const conversationImages = createConversationImages({
-  container: $('#conversationImageGroups'), input: $('#conversationImageInput'), addButton: $('#attachImagesButton'), dropTarget: $('#composer'),
+  container: $('#conversationImageGroups'), input: $('#conversationImageInput'), addButton: $('#attachImagesButton'), groupButton: $('#addImageGroupButton'), dropTarget: $('#composer'),
   uploadFiles: files => persistImages(files, false),
   isLocked: () => !state.project || !state.imageGroupsEnabled || localBusy() || state.uploading || viewingHistory(),
   getProjectKey: () => state.project?.id,
@@ -67,7 +67,7 @@ const conversationImages = createConversationImages({
   },
   onError: error => toast(error.message, true),
 });
-const draftImageGroups = () => conversationImages.getGroups().map(group => ({ id: group.id, label: group.label, referenceIds: group.images.map(image => image.id) }));
+const draftImageGroups = () => conversationImages.getTaskGroups();
 function rememberRevision(projectId, revisionId, overrides) {
   if (!revisionId) return;
   const snapshot = { id: revisionId, overrides: structuredClone(overrides || {}) };
@@ -249,7 +249,7 @@ function renderReferences() {
     const projectId = state.project.id;
     if (conversationImages.getGroups().some(group => group.images.some(image => image.id === button.dataset.removeReference))) {
       button.disabled = false;
-      return toast('这张图已加入本轮图片组，请先从图片组移除。');
+      return toast('这张图已加入本轮对话，请先从对话附件移除。');
     }
     try {
       const result = await api(projectUrl(`/references/${encodeURIComponent(button.dataset.removeReference)}`), { method: 'DELETE' });
@@ -262,11 +262,11 @@ function messageImages(message) {
   const attachments = message.attachments || [];
   if (!attachments.length) return '';
   const byId = new Map(attachments.map(image => [image.referenceId || image.id, image]));
-  const groups = (message.imageGroups || []).map(group => ({ label: group.label, images: group.referenceIds.map(id => byId.get(id)).filter(Boolean) }));
+  const groups = (message.imageGroups || []).map(group => ({ label: group.id === UNGROUPED_IMAGES_ID ? '' : group.label, images: group.referenceIds.map(id => byId.get(id)).filter(Boolean) }));
   const groupedIds = new Set((message.imageGroups || []).flatMap(group => group.referenceIds));
   const projectImages = attachments.filter(image => !groupedIds.has(image.referenceId || image.id));
   if (projectImages.length) groups.unshift({ label: '项目参考图', images: projectImages });
-  return groups.filter(group => group.images.length).map(group => `<div class="message-image-group"><p class="message-image-group-label">${escapeHtml(group.label)} · ${group.images.length} 张</p><div class="message-image-grid">${group.images.map(image => `<button type="button" data-message-image="${escapeHtml(image.url)}" data-image-name="${escapeHtml(image.name)}" aria-label="查看图片 ${escapeHtml(image.name)}"><img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.name)}" loading="lazy"></button>`).join('')}</div></div>`).join('');
+  return groups.filter(group => group.images.length).map(group => `<div class="message-image-group">${group.label ? `<p class="message-image-group-label">${escapeHtml(group.label)} · ${group.images.length} 张</p>` : ''}<div class="message-image-grid">${group.images.map(image => `<button type="button" data-message-image="${escapeHtml(image.url)}" data-image-name="${escapeHtml(image.name)}" aria-label="查看图片 ${escapeHtml(image.name)}"><img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.name)}" loading="lazy"></button>`).join('')}</div></div>`).join('');
 }
 
 function renderMessages() {
@@ -342,7 +342,8 @@ function renderTask() {
   $('#includedReferenceCount').textContent = `(${selectedReferences().length})`;
   $('#includeReferenceLabel').hidden = !groups.length;
   $('#includeProjectReferences').disabled = busy || state.uploading || viewingHistory();
-  $('#conversationImageCount').textContent = groups.length ? `${groups.length} 组 · ${groupImageIds.size} 张` : '';
+  const namedGroupCount = conversationImages.getGroups().filter(group => group.id !== UNGROUPED_IMAGES_ID).length;
+  $('#conversationImageCount').textContent = namedGroupCount ? `${namedGroupCount} 组 · ${groupImageIds.size} 张` : groupImageIds.size ? `${groupImageIds.size} 张` : '';
   conversationImages.refresh();
   const showCreation = feedback.overlay && !viewingHistory();
   $('#creationOverlay').hidden = !showCreation;

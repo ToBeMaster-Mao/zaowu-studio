@@ -1,5 +1,7 @@
 export const CONVERSATION_IMAGE_LIMIT = 16;
 export const CONVERSATION_GROUP_LIMIT = 8;
+// Plain attachments share a transport group without showing a named group in the UI.
+export const UNGROUPED_IMAGES_ID = 'conversation-attachments';
 
 const uid = () => globalThis.crypto.randomUUID();
 const copyImage = image => ({ id: String(image.id), name: String(image.name || '参考图片'), url: String(image.url || '') });
@@ -20,13 +22,14 @@ export function normalizeConversationGroups(value = []) {
   const groupIds = new Set();
   let remaining = CONVERSATION_IMAGE_LIMIT;
   for (const source of Array.isArray(value) ? value : []) {
-    if (groups.length >= CONVERSATION_GROUP_LIMIT || remaining < 1) break;
+    if (groups.length >= CONVERSATION_GROUP_LIMIT) break;
     const images = mergeConversationImages([], Array.isArray(source?.images) ? source.images : [], remaining);
-    if (!images.length) continue;
+    if (!source || (!images.length && source.id === UNGROUPED_IMAGES_ID)) continue;
     let id = String(source.id || uid());
     if (groupIds.has(id)) id = uid();
     groupIds.add(id);
-    groups.push({ id, label: String(source.label || '').trim().slice(0, 60) || `图片组 ${groups.length + 1}`, images });
+    const number = groups.filter(group => group.id !== UNGROUPED_IMAGES_ID).length + 1;
+    groups.push({ id, label: id === UNGROUPED_IMAGES_ID ? '补充图片' : String(source.label || '').trim().slice(0, 60) || `图片组 ${number}`, images });
     remaining -= images.length;
   }
   return groups;
@@ -34,10 +37,10 @@ export function normalizeConversationGroups(value = []) {
 
 /** Draft-only image groups. Uploading persists references; removal here never deletes the project library. */
 export function createConversationImages({
-  container, input, addButton, dropTarget, uploadFiles,
+  container, input, addButton, groupButton, dropTarget, uploadFiles,
   onChange = () => {}, onError = () => {}, isLocked = () => false, getProjectKey = () => null,
 }) {
-  if (!container || !input || !addButton || !dropTarget || typeof uploadFiles !== 'function') {
+  if (!container || !input || !addButton || !groupButton || !dropTarget || typeof uploadFiles !== 'function') {
     throw new Error('会话图片组缺少必要的界面节点或上传函数。');
   }
   const doc = container.ownerDocument;
@@ -51,8 +54,11 @@ export function createConversationImages({
   const countImages = () => groups.reduce((total, group) => total + group.images.length, 0);
   const getGroups = () => groups.map((group, index) => ({
     id: group.id,
-    label: group.label.trim().slice(0, 60) || `图片组 ${index + 1}`,
+    label: group.label.trim().slice(0, 60) || `图片组 ${groups.slice(0, index + 1).filter(item => item.id !== UNGROUPED_IMAGES_ID).length}`,
     images: group.images.map(copyImage),
+  }));
+  const getTaskGroups = () => getGroups().filter(group => group.images.length).map(group => ({
+    id: group.id, label: group.label, referenceIds: group.images.map(image => image.id),
   }));
   const emit = () => onChange(getGroups(), { uploading });
   const fail = message => onError(new Error(message));
@@ -80,10 +86,13 @@ export function createConversationImages({
   function refresh() {
     const locked = blocked();
     const full = countImages() >= CONVERSATION_IMAGE_LIMIT;
-    addButton.disabled = locked || full || groups.length >= CONVERSATION_GROUP_LIMIT;
+    const plainFull = !findGroup(UNGROUPED_IMAGES_ID) && groups.length >= CONVERSATION_GROUP_LIMIT;
+    addButton.disabled = locked || full || plainFull;
+    groupButton.disabled = locked || full || groups.length >= CONVERSATION_GROUP_LIMIT;
     input.disabled = locked || full;
     addButton.setAttribute('aria-busy', String(uploading));
-    addButton.title = uploading ? '正在添加图片…' : full ? '本次会话最多添加 16 张图片' : '添加一组参考图片，也可以拖入或粘贴图片';
+    addButton.title = uploading ? '正在添加图片…' : full ? '本次会话最多添加 16 张图片' : plainFull ? '已有 8 个图片组，请通过组内的＋添加图片' : '添加图片，也可以拖入或粘贴图片';
+    groupButton.title = groups.length >= CONVERSATION_GROUP_LIMIT ? '本次会话最多 8 组（含未分组图片）' : '新建一个可命名的图片组';
     container.setAttribute('aria-busy', String(uploading));
     container.dataset.uploading = String(uploading);
     for (const button of container.querySelectorAll('button')) {
@@ -96,9 +105,9 @@ export function createConversationImages({
     if (locked) clearDropState();
   }
 
-  function choose(groupId = null) {
+  function choose(groupId = UNGROUPED_IMAGES_ID) {
     if (blocked()) return;
-    if (!groupId && groups.length >= CONVERSATION_GROUP_LIMIT) return fail('本次会话最多添加 8 组图片。');
+    if (!findGroup(groupId) && groups.length >= CONVERSATION_GROUP_LIMIT) return fail('已有 8 个图片组，请通过组内的＋添加图片。');
     if (countImages() >= CONVERSATION_IMAGE_LIMIT) return fail('本次会话最多添加 16 张图片。');
     chooserGroup = groupId;
     chooserProject = getProjectKey();
@@ -108,38 +117,54 @@ export function createConversationImages({
     input.click();
   }
 
+  function addGroup() {
+    if (blocked()) return;
+    if (groups.length >= CONVERSATION_GROUP_LIMIT) return fail('本次会话最多 8 组（含未分组图片）。');
+    if (countImages() >= CONVERSATION_IMAGE_LIMIT) return fail('本次会话最多添加 16 张图片。');
+    let number = 1;
+    while (groups.some(group => group.label === `图片组 ${number}`)) number++;
+    const group = { id: uid(), label: `图片组 ${number}`, images: [] };
+    groups.push(group);
+    render(); emit();
+    const field = [...container.querySelectorAll('.conversation-image-label')].at(-1);
+    field?.focus(); field?.select();
+  }
+
   function render() {
     const scrollTop = container.scrollTop;
     const fragment = doc.createDocumentFragment();
     groups.forEach((group, index) => {
-      const groupElement = element('section', 'conversation-image-group');
+      const plain = group.id === UNGROUPED_IMAGES_ID;
+      const number = groups.slice(0, index + 1).filter(item => item.id !== UNGROUPED_IMAGES_ID).length;
+      const groupElement = element('section', plain ? 'conversation-image-group conversation-image-ungrouped' : 'conversation-image-group');
       groupElement.dataset.imageGroup = group.id;
-      groupElement.setAttribute('aria-label', group.label || `图片组 ${index + 1}`);
+      groupElement.setAttribute('aria-label', group.label || `图片组 ${number}`);
       const header = element('div', 'conversation-image-group-header');
       const label = element('input', 'conversation-image-label');
       label.type = 'text';
       label.value = group.label;
       label.maxLength = 60;
-      label.placeholder = `图片组 ${index + 1}`;
-      label.setAttribute('aria-label', `第 ${index + 1} 组图片的名称`);
+      label.placeholder = `图片组 ${number}`;
+      label.setAttribute('aria-label', `第 ${number} 组图片的名称`);
       label.addEventListener('keydown', event => {
         if (event.key === 'Enter') { event.preventDefault(); label.blur(); }
       });
       label.addEventListener('input', () => {
         group.label = label.value.slice(0, 60);
-        groupElement.setAttribute('aria-label', group.label || `图片组 ${index + 1}`);
+        syncGroupLabels();
         emit();
       });
       label.addEventListener('blur', () => {
-        const normalized = group.label.trim() || `图片组 ${index + 1}`;
-        if (group.label !== normalized) { group.label = normalized; label.value = normalized; emit(); }
+        const normalized = group.label.trim() || `图片组 ${number}`;
+        if (group.label !== normalized) { group.label = normalized; label.value = normalized; syncGroupLabels(); emit(); }
       });
       header.append(label, element('span', 'conversation-image-count', `${group.images.length} 张`));
-      header.append(action('conversation-image-remove-group', '×', `移除${group.label || `图片组 ${index + 1}`}`, () => {
+      const removeGroupButton = action('conversation-image-remove-group', '×', `移除${group.label || `图片组 ${number}`}`, () => {
         if (blocked()) return;
         groups = groups.filter(item => item.id !== group.id);
         render(); emit();
-      }));
+      });
+      header.append(removeGroupButton);
       const grid = element('div', 'conversation-image-grid');
       for (const image of group.images) {
         const tile = element('div', 'conversation-image-tile');
@@ -153,13 +178,22 @@ export function createConversationImages({
         tile.append(thumbnail, action('conversation-image-remove', '×', `移除图片：${image.name}`, () => {
           if (blocked()) return;
           group.images = group.images.filter(item => item.id !== image.id);
-          if (!group.images.length) groups = groups.filter(item => item.id !== group.id);
+          if (!group.images.length && plain) groups = groups.filter(item => item.id !== group.id);
           render(); emit();
         }));
         grid.append(tile);
       }
-      grid.append(action('conversation-image-add', '+', `向${group.label || `图片组 ${index + 1}`}添加图片`, () => choose(group.id)));
-      groupElement.append(header, grid);
+      const addImagesButton = action('conversation-image-add', '+', `向${group.label || `图片组 ${number}`}添加图片`, () => choose(group.id));
+      grid.append(addImagesButton);
+      function syncGroupLabels() {
+        const name = group.label || `图片组 ${number}`;
+        groupElement.setAttribute('aria-label', name);
+        for (const [button, text] of [[removeGroupButton, `移除${name}`], [addImagesButton, `向${name}添加图片`]]) {
+          button.setAttribute('aria-label', text); button.title = text;
+        }
+      }
+      if (!plain) groupElement.append(header);
+      groupElement.append(grid);
       fragment.append(groupElement);
     });
     const status = element('p', 'conversation-image-upload-status', '正在添加图片…');
@@ -171,11 +205,12 @@ export function createConversationImages({
     container.scrollTop = scrollTop;
   }
 
-  async function upload(fileList, groupId = null) {
+  async function upload(fileList, groupId = UNGROUPED_IMAGES_ID) {
     const files = Array.from(fileList || []);
     if (!files.length || blocked()) return false;
-    if (groupId && !findGroup(groupId)) return false;
-    if (!groupId && groups.length >= CONVERSATION_GROUP_LIMIT) { fail('本次会话最多添加 8 组图片。'); return false; }
+    groupId ||= UNGROUPED_IMAGES_ID;
+    if (groupId !== UNGROUPED_IMAGES_ID && !findGroup(groupId)) return false;
+    if (!findGroup(groupId) && groups.length >= CONVERSATION_GROUP_LIMIT) { fail('已有 8 个图片组，请通过组内的＋添加图片。'); return false; }
     const remaining = CONVERSATION_IMAGE_LIMIT - countImages();
     if (files.length > remaining) { fail(`本次会话最多添加 16 张图片，还可以添加 ${remaining} 张。`); return false; }
     const projectKey = getProjectKey();
@@ -188,15 +223,11 @@ export function createConversationImages({
       if (!isCurrent() || isLocked()) return false;
       const images = mergeConversationImages([], Array.isArray(uploaded) ? uploaded : [], remaining);
       if (!images.length) return false;
-      if (groupId) {
-        const target = findGroup(groupId);
-        if (!target) return false;
+      const target = findGroup(groupId);
+      if (target) {
         target.images = mergeConversationImages(target.images, images, target.images.length + remaining);
-      } else {
-        let number = groups.length + 1;
-        while (groups.some(group => group.label === `图片组 ${number}`)) number++;
-        groups.push({ id: uid(), label: `图片组 ${number}`, images });
-      }
+      } else if (groupId === UNGROUPED_IMAGES_ID) groups.unshift({ id: UNGROUPED_IMAGES_ID, label: '补充图片', images });
+      else return false;
       render();
       return true;
     } catch (error) {
@@ -209,6 +240,7 @@ export function createConversationImages({
   }
 
   addButton.addEventListener('click', () => choose());
+  groupButton.addEventListener('click', addGroup);
   input.addEventListener('change', () => {
     const files = Array.from(input.files || []);
     input.value = '';
@@ -249,12 +281,15 @@ export function createConversationImages({
     const images = Array.from(event.clipboardData?.files || []).filter(file => file.type.startsWith('image/'));
     if (!images.length) return;
     event.preventDefault();
-    void upload(images);
+    const groupElement = eventGroup(event);
+    const groupId = groupElement && container.contains(groupElement) ? groupElement.dataset.imageGroup : UNGROUPED_IMAGES_ID;
+    void upload(images, groupId);
   });
 
   render();
   return {
     getGroups,
+    getTaskGroups,
     setGroups(next) { generation++; groups = normalizeConversationGroups(next); clearDropState(); render(); emit(); },
     clear() { generation++; groups = []; clearDropState(); render(); emit(); },
     refresh,

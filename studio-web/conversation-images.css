@@ -72,13 +72,13 @@
 .conversation-image-remove:hover:not(:disabled) { background: #405044; color: #fff; }
 .conversation-image-add { display: grid; place-items: center; padding: 0; border-style: dashed; color: #91a287; font: inherit; font-size: 22px; cursor: pointer; }
 .conversation-image-add:hover:not(:disabled) { border-color: #b3cc86; background: #293127; color: #d3f28a; }
-.conversation-image-group button:focus-visible, #attachImagesButton:focus-visible { outline: 2px solid #d3f28a; outline-offset: 2px; }
+.conversation-image-group button:focus-visible, #attachImagesButton:focus-visible, #addImageGroupButton:focus-visible { outline: 2px solid #d3f28a; outline-offset: 2px; }
 .conversation-image-group button:disabled, .conversation-image-label:disabled { opacity: .45; cursor: not-allowed; }
 .conversation-image-upload-status { display: flex; align-items: center; gap: 6px; margin: 1px 2px 2px; color: #adc391; font-size: 11px; line-height: 1.6; }
 .conversation-image-upload-status::before { content: ''; width: 9px; height: 9px; border: 1px solid #6f7e60; border-top-color: #d3f28a; border-radius: 50%; animation: conversation-image-spin .8s linear infinite; }
 .composer { position: relative; }
 .composer.conversation-drop-over { border-color: #c3dd92; box-shadow: 0 0 0 2px #c3dd9222; }
-.composer.conversation-drop-over::after { content: '放开以添加一组参考图片'; position: absolute; z-index: 5; inset: 5px; display: grid; place-items: center; padding: 14px; border: 1px dashed #b9d288; border-radius: 8px; background: #202c22f5; color: #d6edac; font-size: 12px; pointer-events: none; }
+.composer.conversation-drop-over::after { content: '放开以添加参考图片'; position: absolute; z-index: 5; inset: 5px; display: grid; place-items: center; padding: 14px; border: 1px dashed #b9d288; border-radius: 8px; background: #202c22f5; color: #d6edac; font-size: 12px; pointer-events: none; }
 .conversation-image-group.drop-over { border-color: #c3dd92; background: #303b2b; box-shadow: inset 0 0 0 1px #c3dd9244; }
 @keyframes conversation-image-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .conversation-image-group { transition: none; } .conversation-image-upload-status::before { animation: none; } }

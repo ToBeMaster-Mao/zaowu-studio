@@ -171,6 +171,7 @@
 #leftPanel .composer-label { display: none; }
 #leftPanel #conversationImageGroups { margin: 0 0 9px; gap: 8px; max-height: 194px; }
 #leftPanel .conversation-image-group { width: fit-content; min-width: 162px; max-width: 100%; padding: 7px; border-color: #ffffff12; border-radius: 8px; background: #252d31; }
+#leftPanel .conversation-image-ungrouped { width: 100%; min-width: 0; padding: 0; border: 0; background: transparent; }
 #leftPanel .conversation-image-group-header { margin-bottom: 5px; gap: 5px; }
 #leftPanel .conversation-image-label { padding: 0 2px; color: #cdd5db; font-size: 12px; }
 #leftPanel .conversation-image-count { display: none; }
@@ -183,9 +184,9 @@
 #leftPanel .conversation-image-tile:hover .conversation-image-remove,
 #leftPanel .conversation-image-tile:focus-within .conversation-image-remove { opacity: 1; }
 #leftPanel .conversation-image-add { color: #93a096; border-color: #ffffff20; font-size: 22px; }
-#leftPanel .conversation-attachment-toolbar { margin: 0 0 8px; gap: 8px; }
-#leftPanel #attachImagesButton { padding: 6px 9px; border-color: #ffffff14; border-radius: 7px; background: #ffffff02; color: #c2cbd2; font-size: 12px; }
-#leftPanel #attachImagesButton:hover:not(:disabled) { border-color: #b9d48666; color: #d3f28a; background: #d3f28a06; }
+#leftPanel .conversation-attachment-toolbar { margin: 0 0 8px; gap: 8px; flex-wrap: wrap; }
+#leftPanel #attachImagesButton, #leftPanel #addImageGroupButton { padding: 6px 9px; border-color: #ffffff14; border-radius: 7px; background: #ffffff02; color: #c2cbd2; font-size: 12px; }
+#leftPanel #attachImagesButton:hover:not(:disabled), #leftPanel #addImageGroupButton:hover:not(:disabled) { border-color: #b9d48666; color: #d3f28a; background: #d3f28a06; }
 #leftPanel #conversationImageCount { font-size: 12px; color: #98a6af; }
 #leftPanel .include-reference-label { margin-bottom: 8px; color: #a0adb6; font-size: 12px; }
 #leftPanel .include-reference-label input { width: 13px; height: 13px; }

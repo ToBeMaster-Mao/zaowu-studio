@@ -6,7 +6,7 @@
 logo-mark.svg        彩色图形标识，透明背景，64 × 64 viewBox。
 logo-mark-mono.svg   单色图形，同一轮廓，适合单色印刷和遮罩；默认浅柠绿，可更改 color。
 logo-lockup.svg      横排“图形 + 造物 STUDIO”，透明背景，242 × 64 viewBox。
-favicon.svg         简化单色网站图标，16 px 起。
+favicon.svg         黑色圆角底、浅柠绿标识的网站图标，16 px 起。
 preview.html        本地品牌预览，含标识、组合、尺寸与配色。
 
 使用
@@ -22,5 +22,5 @@ preview.html        本地品牌预览，含标识、组合、尺寸与配色。
 
 网页接入示例
 <img class="brand-mark" src="/studio-web/brand/logo-mark.svg" width="32" height="32" alt="">
-<link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg">
+<link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg?v=black-bg">
 父链接已提供“造物 Studio 首页”无障碍名称时，图形设 alt=""，避免重复朗读。
