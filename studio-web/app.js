@@ -4,6 +4,7 @@ import { describeTask, elapsedLabel } from './task-status.js';
 import { createConversationImages, UNGROUPED_IMAGES_ID } from './conversation-images.js';
 import { enhanceSelect } from './select-menu.js';
 import { createSkillInstallGuide } from './skill-install.js';
+import { createSettingsPanel, publicSettings, PROVIDERS } from './settings.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -19,7 +20,8 @@ const state = {
   approvals: new Map(), loadingProject: 0, taskSubmitting: false, skillUrl: '/downloads/model-studio-skill.zip',
   referenceIds: new Set(), uploading: false, submitIntent: 'chat', submittedAt: null,
   stoppingTaskId: null, streamConnected: true, activity: '', lastActivityAt: null, submissionError: null,
-  serverCreating: false, approvalSnapshot: [],
+  approvalSnapshot: [], settings: null, scheduler: { active: [], queued: [] },
+  providerChoice: 'codex', modelChoices: {}, providerModels: {}, workspaceRefreshing: false,
   referencesFresh: false,
   previewRevision: null, previewLoadingId: null, previewRequest: 0, revisionPreviewApi: false,
   displayRevisionId: null, displayOverrides: {}, restoringVersion: false, savingParts: 0,
@@ -28,13 +30,14 @@ const state = {
 const revisionCache = new Map();
 // Visibility is scoped to this page session; project history and Agent context are retained.
 const hiddenConversationIds = new Map();
-const selectMenus = new Map(['projectSelect', 'modelSelect', 'cameraViewSelect'].map(id => [id, enhanceSelect($(`#${id}`))]));
+const selectMenus = new Map(['projectSelect', 'modelSelect', 'providerSelect', 'cameraViewSelect'].map(id => [id, enhanceSelect($(`#${id}`))]));
 const creationParticles = createCreationParticles($('#creationParticles'));
 const pendingRpc = new Map();
 const pendingPartUpdates = new Set();
 let rpcId = 0;
 let validationKey = '';
 let refreshTimer;
+let workspaceEpoch = 0, bootstrapRequest = 0, workspaceReloadPromise = null;
 const categoryLabels = { fuselage: '机身', cockpit: '驾驶舱', cabin: '客舱与舷窗', wings: '机翼', engines: '发动机', tail: '尾翼', 'landing-gear': '起落架', details: '模型部件' };
 const categoryOrder = Object.keys(categoryLabels);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
@@ -52,7 +55,9 @@ const timeLabel = value => {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
 };
 const isBusy = task => task && !['completed', 'failed', 'interrupted', 'cancelled', 'canceled', 'invalid', 'idle'].includes(task.status);
-const localBusy = () => state.taskSubmitting || state.serverCreating || isBusy(state.project?.task) || Boolean(state.project?.pendingRevisionId);
+const localBusy = () => state.workspaceRefreshing || state.taskSubmitting || isBusy(state.project?.task) || Boolean(state.project?.pendingRevisionId);
+const workspaceStorageKey = (kind, id = '') => `studio-${kind}:${encodeURIComponent(state.settings?.workspaceRoot || 'default')}:${id}`;
+const providerSupportsImages = () => state.providerChoice === 'codex' || state.settings?.providers?.[state.providerChoice]?.supportsImages === true;
 const selectedReferences = () => (state.project?.references || []).filter(reference => state.referenceIds.has(reference.id));
 const viewingHistory = () => Boolean(state.previewRevision || state.previewLoadingId);
 const revisionNumber = id => (state.project?.versions || []).findIndex(version => version.id === id) + 1;
@@ -68,12 +73,20 @@ const conversationImages = createConversationImages({
   onError: error => toast(error.message, true),
 });
 const draftImageGroups = () => conversationImages.getTaskGroups();
+const settingsPanel = createSettingsPanel({
+  dialog: $('#settingsDialog'), api, onSettings: applySettings,
+  onModels: (id, models, draft) => {
+    state.providerModels[id] = { baseUrl: draft.baseUrl, models };
+    if (id === state.providerChoice) renderProvider();
+  },
+  onSelectProject: id => selectProject(id).catch(error => toast(error.message, true)),
+});
 function rememberRevision(projectId, revisionId, overrides) {
   if (!revisionId) return;
   const snapshot = { id: revisionId, overrides: structuredClone(overrides || {}) };
-  const key = `${projectId}:${revisionId}`;
+  const key = workspaceStorageKey('revision', `${projectId}:${revisionId}`);
   revisionCache.set(key, snapshot);
-  try { sessionStorage.setItem(`studio-revision:${key}`, JSON.stringify(snapshot)); } catch { /* Memory cache remains available. */ }
+  try { sessionStorage.setItem(key, JSON.stringify(snapshot)); } catch { /* Memory cache remains available. */ }
 }
 
 function toast(message, error = false) {
@@ -123,14 +136,17 @@ function setDisplaySettingsOpen(open, focus = false) {
 }
 
 async function api(url, options = {}) {
+  const epoch = workspaceEpoch;
+  const scoped = /^\/api\/(projects|tasks|approvals)(?:\/|$)/.test(url);
   const response = await fetch(url, {
     ...options,
-    headers: { 'x-studio-token': token, ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers },
+    headers: { 'x-studio-token': token, ...(scoped && state.settings?.workspaceRoot ? { 'x-studio-workspace': encodeURIComponent(state.settings.workspaceRoot) } : {}), ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers },
     ...(options.body && typeof options.body !== 'string' ? { body: JSON.stringify(options.body) } : {}),
   });
   let result;
   try { result = await response.json(); }
   catch { throw new Error(response.ok ? '服务返回了无法读取的数据' : `请求失败（${response.status}），请刷新页面后重试`); }
+  if (epoch !== workspaceEpoch && scoped) throw new Error('工作空间已切换，已忽略旧请求的结果。');
   if (!response.ok) throw new Error(typeof result.error === 'string' ? result.error : result.error?.message || result.message || `请求失败（${response.status}）`);
   return result;
 }
@@ -149,7 +165,7 @@ function setTab(tab) {
 
 function renderProjects() {
   const select = $('#projectSelect');
-  select.innerHTML = state.projects.map(project => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)}</option>`).join('');
+  select.innerHTML = state.projects.map(project => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)}${project.task?.status === 'queued' ? ' · 排队中' : isBusy(project.task) ? ' · 处理中' : project.pendingRevisionId ? ' · 待校验' : ''}</option>`).join('');
   if (state.project) select.value = state.project.id;
   selectMenus.get('projectSelect').refresh();
 }
@@ -185,7 +201,7 @@ function setProject(project, { forceLoad = false, keepViewport = false } = {}) {
     state.referenceIds = new Set([...validReferenceIds].slice(0, state.imageLimits.perTask));
     state.referencesFresh = false;
     try {
-      const remembered = JSON.parse(sessionStorage.getItem(`studio-references:${project.id}`));
+      const remembered = JSON.parse(sessionStorage.getItem(workspaceStorageKey('references', project.id)));
       if (Array.isArray(remembered)) state.referenceIds = new Set(remembered.filter(id => validReferenceIds.has(id)).slice(0, state.imageLimits.perTask));
     } catch { /* Invalid preferences should not block opening a model. */ }
     $('#promptInput').value = '';
@@ -197,7 +213,9 @@ function setProject(project, { forceLoad = false, keepViewport = false } = {}) {
   }
   if (!isBusy(project.task)) { state.stoppingTaskId = null; state.approvals.clear(); }
   syncApprovals();
+  if (isBusy(project.task) && Object.hasOwn(PROVIDERS, project.task?.provider)) chooseProvider(project.task.provider, project.task.model || '');
   renderProjects();
+  renderScheduler();
   $('#stageProjectName').textContent = project.name;
   $('#sceneProjectName').textContent = project.name;
   document.title = `${project.name} · 造物 Studio`;
@@ -219,13 +237,13 @@ async function selectProject(id) {
   const project = await api(`/api/projects/${encodeURIComponent(id)}`);
   if (request !== state.loadingProject) return;
   setProject(project);
-  sessionStorage.setItem('studio-active-project', project.id);
+  sessionStorage.setItem(workspaceStorageKey('active-project'), project.id);
 }
 
 function renderReferences() {
   const references = state.project?.references || [];
   state.referenceIds = new Set([...state.referenceIds].filter(id => references.some(reference => reference.id === id)));
-  if (state.project) sessionStorage.setItem(`studio-references:${state.project.id}`, JSON.stringify([...state.referenceIds]));
+  if (state.project) sessionStorage.setItem(workspaceStorageKey('references', state.project.id), JSON.stringify([...state.referenceIds]));
   $('#referenceCount').textContent = '';
   $('#referenceSelectionCount').textContent = `已选 ${state.referenceIds.size} 张`;
   $('#selectAllReferences').textContent = references.length > state.imageLimits.perTask ? `选前 ${state.imageLimits.perTask} 张` : '全选';
@@ -276,7 +294,7 @@ function renderMessages() {
   const messages = (state.project?.messages || []).filter(message => !hiddenIds?.has(message.id));
   $('#clearConversationButton').disabled = !messages.length || localBusy();
   $('#conversationHistoryNotice').hidden = !hiddenIds?.size;
-  if (isBusy(state.project?.task) && state.project?.task?.status !== 'validating') {
+  if (isBusy(state.project?.task) && !['validating', 'queued'].includes(state.project?.task?.status)) {
     for (const [id, message] of state.liveMessages) messages.push({ id, role: 'assistant', text: message, live: true });
     if (!state.liveMessages.size) messages.push({ id: 'task-output', role: 'assistant', text: state.project.task.output || '', live: true });
   }
@@ -302,10 +320,11 @@ function renderMessages() {
 function renderTask() {
   const groups = draftImageGroups();
   const groupImageIds = new Set(groups.flatMap(group => group.referenceIds));
-  const task = state.taskSubmitting ? { intent: state.submitIntent, startedAt: state.submittedAt, status: 'starting' } : state.referencesFresh && !localBusy() ? null : state.project?.task;
+  const task = state.taskSubmitting ? { intent: state.submitIntent, provider: state.providerChoice, startedAt: state.submittedAt, status: 'starting' } : state.referencesFresh && !localBusy() ? null : state.project?.task;
+  const taskProvider = task?.provider || state.providerChoice;
   const feedback = describeTask({ task: state.submissionError ? { status: 'failed' } : task,
-    submitting: state.taskSubmitting || state.serverCreating, stopping: state.stoppingTaskId === task?.id,
-    awaitingApproval: state.approvals.size > 0, connected: state.bridge.connected && state.streamConnected,
+    submitting: state.taskSubmitting, stopping: state.stoppingTaskId === task?.id,
+    awaitingApproval: state.approvals.size > 0, connected: state.streamConnected && (taskProvider !== 'codex' || task?.status === 'queued' || state.bridge.connected),
     pendingRevision: Boolean(state.project?.pendingRevisionId), referenceCount: selectedReferences().length,
     uploading: state.uploading, activity: state.activity });
   const busy = localBusy();
@@ -315,7 +334,7 @@ function renderTask() {
   $('#taskDescription').textContent = state.submissionError || (feedback.phase === 'failed' && task?.error ? String(task.error).slice(0, 240) : feedback.description);
   $('#taskActivity').textContent = ['working', 'generating'].includes(feedback.phase) && state.activity && state.activity !== feedback.description ? state.activity : '';
   $('#taskNotice').hidden = feedback.phase === 'idle' || feedback.phase === 'ready';
-  $('.task-steps').hidden = !(task?.intent === 'generate' && (feedback.busy || feedback.phase === 'completed'));
+  $('.task-steps').hidden = task?.status === 'queued' || !(task?.intent === 'generate' && (feedback.busy || feedback.phase === 'completed'));
   const stage = feedback.phase === 'submitting' || task?.status === 'starting' ? 0 : feedback.phase === 'validating' ? 2 : feedback.phase === 'completed' ? 3 : 1;
   $$('[data-step]').forEach((node, index) => { node.classList.toggle('active', index === stage); node.classList.toggle('done', index < stage); });
   $('#sendButton').hidden = busy;
@@ -324,11 +343,12 @@ function renderTask() {
   for (const id of ['stopButton', 'taskCardStop', 'overlayStopButton']) {
     const button = $(`#${id}`);
     button.disabled = !feedback.canStop;
-    button.textContent = feedback.phase === 'stopping' ? '正在停止…' : '停止任务';
+    button.textContent = feedback.phase === 'stopping' ? task?.status === 'queued' ? '正在取消…' : '正在停止…' : task?.status === 'queued' ? '取消排队' : '停止任务';
+    button.setAttribute('aria-label', button.textContent);
     if (id !== 'stopButton') button.hidden = !feedback.canStop && feedback.phase !== 'stopping';
   }
   $('#generateButton').disabled = !state.project || busy || viewingHistory() || state.uploading || !selectedReferences().length;
-  $('#generateButton').textContent = state.uploading ? '正在上传…' : busy && task?.intent === 'generate' ? '建模进行中…' : '开始建模';
+  $('#generateButton').textContent = state.uploading ? '正在上传…' : task?.status === 'queued' ? '建模已排队' : busy && task?.intent === 'generate' ? '建模进行中…' : '开始建模';
   $('#referenceHint').textContent = viewingHistory() ? '返回当前版本后可继续建模。' : state.uploading ? '正在上传图片…' : state.project?.references?.length && !selectedReferences().length ? '请选用至少一张参考图。' : '';
   $('#uploadButton').disabled = busy || state.uploading;
   const emptyUpload = $('#emptyUpload'); if (emptyUpload) emptyUpload.disabled = busy || state.uploading;
@@ -336,11 +356,14 @@ function renderTask() {
   $('#selectAllReferences').disabled = busy || state.uploading || !state.project?.references?.length;
   $('#clearReferenceSelection').disabled = busy || state.uploading || !state.referenceIds.size;
   $$('[data-reference], [data-remove-reference]').forEach(button => { button.disabled = busy || state.uploading; });
-  $('#projectSelect').disabled = state.taskSubmitting || state.uploading;
-  $('#newProject').disabled = state.taskSubmitting || state.uploading;
+  $('#projectSelect').disabled = state.workspaceRefreshing || state.taskSubmitting || state.uploading;
+  $('#newProject').disabled = state.workspaceRefreshing || state.taskSubmitting || state.uploading;
   $('#promptInput').disabled = state.taskSubmitting;
+  $('#providerSelect').disabled = busy || state.uploading;
+  $('#modelSelect').disabled = busy || state.uploading;
+  $('#apiModelInput').disabled = busy || state.uploading;
   $('#includedReferenceCount').textContent = `(${selectedReferences().length})`;
-  $('#includeReferenceLabel').hidden = !groups.length;
+  $('#includeReferenceLabel').hidden = !groups.length && !selectedReferences().length;
   $('#includeProjectReferences').disabled = busy || state.uploading || viewingHistory();
   const namedGroupCount = conversationImages.getGroups().filter(group => group.id !== UNGROUPED_IMAGES_ID).length;
   $('#conversationImageCount').textContent = namedGroupCount ? `${namedGroupCount} 组 · ${groupImageIds.size} 张` : groupImageIds.size ? `${groupImageIds.size} 张` : '';
@@ -361,11 +384,106 @@ function renderTask() {
 
 function updateElapsed() {
   const task = state.project?.task;
+  if (task?.status === 'queued' && !state.taskSubmitting) { $('#taskElapsed').textContent = ''; $('#creationElapsed').textContent = ''; return; }
   const startedAt = state.taskSubmitting ? state.submittedAt : task?.startedAt;
   const endedAt = state.taskSubmitting || isBusy(task) ? null : task?.completedAt;
   const elapsed = state.referencesFresh && !localBusy() ? '' : startedAt && (state.taskSubmitting || isBusy(task) || endedAt) ? elapsedLabel(startedAt, endedAt) : '';
   $('#taskElapsed').textContent = elapsed;
   $('#creationElapsed').textContent = elapsed ? `已用时 ${elapsed}` : '';
+}
+
+function chooseProvider(id, model) {
+  if (!Object.hasOwn(PROVIDERS, id)) id = 'codex';
+  state.modelChoices[state.providerChoice] = state.modelChoice;
+  state.providerChoice = id;
+  state.modelChoice = model ?? (state.modelChoices[id] || state.settings?.providers?.[id]?.model || '');
+  renderProvider(); renderTask();
+}
+
+function renderProvider() {
+  const codex = state.providerChoice === 'codex';
+  $('#providerSelect').value = state.providerChoice;
+  selectMenus.get('providerSelect').refresh();
+  $('#modelSelectTrigger').hidden = !codex;
+  $('#apiModelInput').hidden = codex;
+  if (codex) {
+    const models = state.bridge.models || [];
+    $('#modelSelect').innerHTML = '<option value="">本地默认模型</option>' + models.map(model => `<option value="${escapeHtml(model.model || model.id)}">${escapeHtml(model.displayName || model.id)}</option>`).join('');
+    if (state.modelChoice && ![...$('#modelSelect').options].some(option => option.value === state.modelChoice)) {
+      const option = document.createElement('option'); option.value = option.textContent = state.modelChoice; $('#modelSelect').append(option);
+    }
+    $('#modelSelect').value = state.modelChoice;
+    selectMenus.get('modelSelect').refresh();
+    $('#providerHint').textContent = '使用本地 Codex 登录与模型配置。';
+  } else {
+    const provider = state.settings?.providers?.[state.providerChoice];
+    $('#apiModelInput').value = state.modelChoice;
+    const cache = state.providerModels[state.providerChoice];
+    const models = cache?.baseUrl === provider?.baseUrl ? cache.models : [];
+    $('#taskModels').innerHTML = models.map(model => `<option value="${escapeHtml(model.id)}">${escapeHtml(model.name || model.id)}</option>`).join('');
+    $('#providerHint').textContent = !provider?.hasApiKey ? '请先在设置中配置该服务的 API Key、接口地址和模型。'
+      : !provider.supportsImages ? '当前服务按仅文字模型配置。发送前请取消附带参考图，并移除本轮图片附件。'
+        : '模型可手动填写；在设置中获取该服务的模型列表。';
+  }
+}
+
+function renderScheduler() {
+  const active = state.scheduler.active || [], queued = state.scheduler.queued || [];
+  $('#schedulerStatus').hidden = !active.length && !queued.length;
+  $('#schedulerStatus').textContent = `全部项目：${active.length} 项运行 · ${queued.length} 项排队 · 查看`;
+  settingsPanel.updateScheduler(state.scheduler, state.projects);
+}
+
+function applyScheduler(scheduler) {
+  state.scheduler = { active: [], queued: [], ...scheduler };
+  for (const entry of [...state.scheduler.active, ...state.scheduler.queued]) {
+    const project = state.projects.find(item => item.id === entry.projectId);
+    if (project && entry.task) project.task = { ...entry.task, ...(entry.position ? { queuePosition: entry.position } : {}) };
+    if (state.project?.id === entry.projectId && entry.task) state.project.task = { ...entry.task, ...(entry.position ? { queuePosition: entry.position } : {}) };
+  }
+  renderProjects(); renderScheduler(); renderTask(); renderMessages();
+}
+
+function resetWorkspace() {
+  workspaceEpoch++; state.loadingProject++; state.previewRequest++;
+  clearTimeout(refreshTimer); validationKey = '';
+  state.workspaceRefreshing = true;
+  state.project = null; state.projects = []; state.previewRevision = null; state.previewLoadingId = null;
+  state.selection = null; state.camera = null; state.referenceIds.clear();
+  state.liveMessages.clear(); state.approvals.clear(); state.approvalSnapshot = [];
+  state.conversationDrafts.clear(); revisionCache.clear(); hiddenConversationIds.clear();
+  state.scheduler = { active: [], queued: [] }; state.submissionError = null; state.stoppingTaskId = null;
+  conversationImages.clear();
+  $('#promptInput').value = ''; $('#stageProjectName').textContent = $('#sceneProjectName').textContent = '选择项目';
+  $('#workspacePath').textContent = ''; document.title = '造物 Studio';
+  loadModel({ modelUrl: null }, '');
+  renderProjects(); renderReferences(); renderMessages(); renderApprovals(); renderPreviewBanner(); renderScheduler(); renderTask();
+}
+
+function applySettings(value, { reload = true } = {}) {
+  const settings = publicSettings(value), previous = state.settings;
+  const changedWorkspace = Boolean(previous?.workspaceRoot && previous.workspaceRoot !== settings.workspaceRoot);
+  state.settings = settings;
+  settingsPanel.update(settings);
+  if (!previous || previous.defaultProvider !== settings.defaultProvider) chooseProvider(settings.defaultProvider);
+  else {
+    const id = state.providerChoice;
+    if (id !== 'codex' && (!state.modelChoice || state.modelChoice === previous.providers[id]?.model)) state.modelChoice = settings.providers[id]?.model || '';
+    renderProvider(); renderTask();
+  }
+  if (changedWorkspace) {
+    resetWorkspace();
+    if (reload) {
+      const epoch = workspaceEpoch;
+      const promise = loadBootstrap().finally(() => {
+        if (epoch === workspaceEpoch) { state.workspaceRefreshing = false; renderTask(); }
+        if (workspaceReloadPromise === promise) workspaceReloadPromise = null;
+      });
+      workspaceReloadPromise = promise;
+      return promise;
+    }
+  }
+  return reload ? workspaceReloadPromise : null;
 }
 
 function renderBridge() {
@@ -374,10 +492,7 @@ function renderBridge() {
   $('#connectionLabel').textContent = bridge.connected ? '已连接' : '未连接';
   $('#connectButton').setAttribute('aria-label', `管理 Codex 连接，当前${bridge.connected ? '已连接' : '未连接'}`);
   const models = bridge.models || [];
-  const previous = $('#modelSelect').value || state.modelChoice;
-  $('#modelSelect').innerHTML = '<option value="">本地默认模型</option>' + models.map(model => `<option value="${escapeHtml(model.model || model.id)}">${escapeHtml(model.displayName || model.id)}</option>`).join('');
-  if ([...$('#modelSelect').options].some(option => option.value === previous)) $('#modelSelect').value = previous;
-  selectMenus.get('modelSelect').refresh();
+  renderProvider();
   const accountLabel = bridge.account?.type === 'chatgpt' ? 'ChatGPT' : bridge.account?.type === 'apiKey' ? 'API 登录' : bridge.account?.type || '使用本地 CLI 登录';
   $('#connectDetails').innerHTML = `<div class="connection-state ${bridge.connected ? 'connected' : ''}"><span class="status-dot"></span><div><strong>${bridge.connected ? '本地 Codex 已连接' : '等待连接本地 Codex CLI'}</strong><small>通过本机连接程序与 Codex app-server 通信</small></div></div>${bridge.error ? `<div class="connection-error">${escapeHtml(bridge.error)}</div>` : ''}<div class="connection-detail"><span>登录方式</span><strong>${escapeHtml(accountLabel)}${bridge.account?.planType ? ` · ${escapeHtml(bridge.account.planType)}` : ''}</strong></div><div class="connection-detail"><span>可选模型</span><strong>${models.length ? `${models.length} 个模型` : '连接后读取'}</strong></div><div class="connection-detail"><span>工作范围</span><strong>当前项目目录</strong></div><p class="modal-copy" style="margin-top:20px">首次使用时，请在电脑终端运行 <code>codex login</code> 完成登录。工作台使用现有登录，需要许可的操作会显示在创作助手中。</p><div class="code-note"><span>如果还没有安装 Codex CLI</span><code>npm install -g @openai/codex<br>codex login</code></div>`;
   $('#retryConnect').innerHTML = `${bridge.connected ? '重新检查连接' : '连接本地 CLI'} <span>↗</span>`;
@@ -732,10 +847,10 @@ async function previewVersion(revisionId) {
     } else {
       // Compatibility with an already-running local Agent: immutable snapshots
       // can be browsed without restarting its server or interrupting its task.
-      const key = `${project.id}:${revisionId}`;
+      const key = workspaceStorageKey('revision', `${project.id}:${revisionId}`);
       metadata = revisionCache.get(key);
       if (!metadata) {
-        try { metadata = JSON.parse(sessionStorage.getItem(`studio-revision:${key}`)); } catch { /* Fall through to the immutable manifest. */ }
+        try { metadata = JSON.parse(sessionStorage.getItem(key)); } catch { /* Fall through to the immutable manifest. */ }
       }
       if (!metadata) {
         const response = await fetch(`/studio-web/revision-previews/${encodeURIComponent(project.id)}/${encodeURIComponent(revisionId)}.json`);
@@ -878,7 +993,7 @@ $('#newProjectForm').onsubmit = async event => {
     const project = await api('/api/projects', { method: 'POST', body: { name: $('#projectNameInput').value.trim(), template: $('#templateSelect').value } });
     state.loadingProject++;
     setProject(project);
-    sessionStorage.setItem('studio-active-project', project.id);
+    sessionStorage.setItem(workspaceStorageKey('active-project'), project.id);
     $('#newProjectDialog').close();
     $('#projectNameInput').value = '';
     toast('新项目已创建');
@@ -898,6 +1013,10 @@ $$('dialog').forEach(dialog => { dialog.addEventListener('click', event => {
   if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
 }); });
 $('#modelSelect').onchange = event => { state.modelChoice = event.target.value; };
+$('#providerSelect').onchange = event => chooseProvider(event.target.value);
+$('#apiModelInput').oninput = event => { state.modelChoice = event.target.value.trim(); };
+$('#settingsButton').onclick = () => { setDisplaySettingsOpen(false); void settingsPanel.open(); };
+$('#schedulerStatus').onclick = () => { setDisplaySettingsOpen(false); void settingsPanel.open({ queue: true }); };
 $('#uploadButton').onclick = () => $('#referenceInput').click();
 $('#referenceInput').onchange = async event => {
   const files = [...event.target.files];
@@ -908,6 +1027,7 @@ $('#referenceInput').onchange = async event => {
 
 async function persistImages(files, selectNew) {
   const project = state.project;
+  const epoch = workspaceEpoch;
   if (!project) throw new Error('请先选择一个项目。');
   if (localBusy() || state.uploading || state.restoringVersion) throw new Error('请等待当前任务或上传完成后再添加图片。');
   const incoming = Array.from(files);
@@ -926,9 +1046,10 @@ async function persistImages(files, selectNew) {
   renderTask(); renderReferences();
   try {
     for (const { file, type } of accepted) {
-      if (state.project?.id !== project.id) break;
+      if (epoch !== workspaceEpoch || state.project?.id !== project.id) break;
       try {
         const raw = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('图片读取失败')); reader.readAsDataURL(file); });
+        if (epoch !== workspaceEpoch || state.project?.id !== project.id) break;
         const dataUrl = `data:${type};base64,${String(raw).split(',')[1]}`;
         const previousIds = new Set(state.project.references.map(reference => reference.id));
         const result = await api(projectUrl('/references', project), { method: 'POST', body: { name: file.name, dataUrl } });
@@ -977,14 +1098,21 @@ async function submitTask(intent) {
   if (state.restoringVersion || state.savingParts) return toast('请等待部件或版本保存完成。');
   const prompt = $('#promptInput').value.trim();
   const imageGroups = draftImageGroups();
-  if (localBusy() || state.uploading || !state.project || state.serverCreating) return;
+  if (localBusy() || state.uploading || !state.project) return;
   if (intent === 'generate' && !selectedReferences().length) return toast('请先上传或选中参考图片。');
   if (intent !== 'generate' && !prompt && !imageGroups.length) return;
   if (imageGroups.length && !state.imageGroupsEnabled) return toast('连接程序尚未更新，请刷新工作台后再附加图片组。', true);
   const project = state.project;
+  const epoch = workspaceEpoch;
   const referenceIds = intent === 'generate' || $('#includeProjectReferences').checked ? selectedReferences().map(reference => reference.id) : [];
   const allImageIds = new Set([...referenceIds, ...imageGroups.flatMap(group => group.referenceIds)]);
   if (allImageIds.size > state.imageLimits.perTask) return toast(`本轮共 ${allImageIds.size} 张图片，最多 ${state.imageLimits.perTask} 张。请减少图片，或取消“同时带上已选项目参考图”。`, true);
+  const provider = state.providerChoice, model = state.modelChoice.trim();
+  if (provider !== 'codex') {
+    if (!state.settings?.providers?.[provider]?.hasApiKey) { toast('请先配置该服务的 API Key。', true); void settingsPanel.open(); return; }
+    if (!model) { $('#apiModelInput').focus(); return toast('请选择或填写本轮使用的模型 ID。', true); }
+    if (!providerSupportsImages() && allImageIds.size) return toast('当前服务按仅文字模型配置。请取消附带项目参考图并移除图片附件，或切换到支持图片的服务。', true);
+  }
   state.taskSubmitting = true;
   state.submitIntent = intent; state.submittedAt = new Date().toISOString();
   state.referencesFresh = false;
@@ -999,11 +1127,12 @@ async function submitTask(intent) {
       try {
         const view = await viewerRpc('requestState');
         viewContext = view.camera; selectedPart = view.selection;
-        if (state.imageGroupsEnabled || referenceIds.length < 8) screenshotDataUrl = (await viewerRpc('screenshot')).dataUrl;
+        if (providerSupportsImages() && (state.imageGroupsEnabled || referenceIds.length < 8)) screenshotDataUrl = (await viewerRpc('screenshot')).dataUrl;
       } catch (error) { toast(`视口截图未附加：${error.message}`, true); }
     }
+    if (epoch !== workspaceEpoch) throw new Error('工作空间已切换，请在当前项目重新提交要求。');
     const result = await api(projectUrl('/tasks', project), { method: 'POST', body: {
-      intent, prompt, ...(state.modelChoice ? { model: state.modelChoice } : {}),
+      intent, prompt, provider, ...(model ? { model } : {}),
       ...(selectedPart ? { selectedPart } : {}), ...(viewContext ? { viewContext } : {}),
       ...(screenshotDataUrl ? { screenshotDataUrl } : {}), referenceIds, imageGroups,
     } });
@@ -1091,9 +1220,11 @@ $('#exportButton').onclick = async () => {
   $('#exportButtonLabel').textContent = '正在导出…';
   const name = safeFilename(`${state.project?.name || 'model'}${state.previewRevision ? `-V${revisionNumber(state.previewRevision.id)}` : ''}`);
   const exportingProjectId = state.project.id;
+  const exportingEpoch = workspaceEpoch, exportingWorkspace = state.settings?.workspaceRoot;
   try {
     const result = await viewerRpc('export', {}, 60000);
-    const response = await fetch(`/api/projects/${encodeURIComponent(exportingProjectId)}/exports`, {method:'POST', headers:{'x-studio-token':token,'Content-Type':'model/gltf-binary'}, body:result.buffer});
+    if (exportingEpoch !== workspaceEpoch) throw new Error('工作空间已切换，请重新导出。');
+    const response = await fetch(`/api/projects/${encodeURIComponent(exportingProjectId)}/exports`, {method:'POST', headers:{'x-studio-token':token,...(exportingWorkspace ? {'x-studio-workspace':encodeURIComponent(exportingWorkspace)} : {}),'Content-Type':'model/gltf-binary'}, body:result.buffer});
     const saved = await response.json();
     if(!response.ok)throw new Error(saved.error||'保存导出文件失败');
     const link=document.createElement('a');link.href=saved.url;link.download=`${name}.glb`;link.hidden=true;document.body.append(link);link.click();link.remove();
@@ -1137,13 +1268,20 @@ window.addEventListener('keydown', event => {
 
 function processEvent(data) {
   if (!data || typeof data !== 'object') return;
+  if (data.type === 'settings') {
+    if (data.settings) void Promise.resolve(applySettings(data.settings)).catch(error => toast(error.message, true));
+    return;
+  }
+  if (data.type === 'scheduler') { if (data.scheduler) applyScheduler(data.scheduler); return; }
   if (data.type === 'bridge' || data.type === 'hello') {
-    if (typeof data.taskCreating === 'boolean') state.serverCreating = data.taskCreating;
+    if (data.settings) void Promise.resolve(applySettings(data.settings)).catch(error => toast(error.message, true));
+    if (data.scheduler) applyScheduler(data.scheduler);
     if (Array.isArray(data.approvals)) { state.approvalSnapshot = data.approvals; syncApprovals(); }
     if (data.bridge) { state.bridge = data.bridge; renderBridge(); }
     return;
   }
-  if (data.type === 'taskCreating') { state.serverCreating = data.taskCreating; renderTask(); return; }
+  // Other projects starting work must not lock the project currently being edited.
+  if (data.type === 'taskCreating' || state.workspaceRefreshing) return;
   if (data.type === 'approvals') {
     state.approvalSnapshot = [...state.approvalSnapshot.filter(item => item.projectId !== data.projectId), ...(data.approvals || [])];
     syncApprovals(); renderTask(); return;
@@ -1155,15 +1293,23 @@ function processEvent(data) {
     else renderProjects();
     return;
   }
-  if (data.projectId !== state.project?.id) return;
+  if (data.projectId !== state.project?.id) {
+    if (data.type === 'task') {
+      const project = state.projects.find(item => item.id === data.projectId);
+      if (project) project.task = data.task;
+      renderProjects(); renderScheduler();
+    }
+    return;
+  }
   if (data.type === 'task') {
     if (state.project.task?.id !== data.task?.id) { state.liveMessages.clear(); state.activity = ''; state.submissionError = null; }
     state.project.task = data.task;
+    if (isBusy(data.task) && Object.hasOwn(PROVIDERS, data.task?.provider)) chooseProvider(data.task.provider, data.task.model || '');
     if (!isBusy(data.task)) state.stoppingTaskId = null;
     renderTask(); renderMessages();
     if (!isBusy(data.task)) {
       state.approvals.clear(); renderApprovals();
-      if (data.task?.status === 'completed') toast('Codex 已完成本轮任务');
+      if (data.task?.status === 'completed') toast(`${PROVIDERS[data.task.provider] || '模型服务'} 已完成本轮任务`);
     }
   } else if (data.type === 'agent') {
     const event = data.event;
@@ -1185,8 +1331,10 @@ function processEvent(data) {
     } else if (event.type === 'complete') {
       state.approvals.clear(); renderApprovals(); state.activity = ''; renderTask();
       const id = state.project.id;
+      const epoch = workspaceEpoch;
       clearTimeout(refreshTimer);
       refreshTimer = setTimeout(async () => {
+        if (epoch !== workspaceEpoch) return;
         try { const project = await api(`/api/projects/${encodeURIComponent(id)}`); if (state.project?.id === id) setProject(project); }
         catch (error) { toast(error.message, true); }
       }, 450);
@@ -1197,6 +1345,7 @@ function processEvent(data) {
 let stopped = false;
 const eventController = new AbortController();
 let hasSubscribed = false;
+let subscriptionStarted = false;
 async function subscribe() {
   while (!stopped) {
     try {
@@ -1204,11 +1353,7 @@ async function subscribe() {
       if (response.status === 401) { toast('本地连接已更新，请刷新页面后继续。', true); state.streamConnected = false; renderTask(); return; }
       if (!response.ok || !response.body) throw new Error('事件连接不可用');
       state.streamConnected = true; renderTask();
-      if (hasSubscribed && state.project?.id) {
-        const id = state.project.id;
-        const project = await api(`/api/projects/${encodeURIComponent(id)}`);
-        if (state.project?.id === id) setProject(project);
-      }
+      if (hasSubscribed) await loadBootstrap();
       hasSubscribed = true;
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -1236,12 +1381,13 @@ async function subscribe() {
 const elapsedTimer = setInterval(updateElapsed, 1000);
 window.addEventListener('pagehide', () => { stopped = true; eventController.abort(); clearTimeout(refreshTimer); clearInterval(elapsedTimer); creationParticles.destroy(); for (const menu of selectMenus.values()) menu.destroy(); }, { once: true });
 
-async function start() {
-  try {
+async function loadBootstrap() {
+    const request = ++bootstrapRequest;
     const bootstrap = await api('/api/bootstrap');
+    if (request !== bootstrapRequest) return;
+    if (bootstrap.settings) applySettings(bootstrap.settings, { reload: false });
     state.projects = bootstrap.projects || [];
     state.bridge = bootstrap.bridge || state.bridge;
-    state.serverCreating = Boolean(bootstrap.taskCreating);
     state.approvalSnapshot = bootstrap.approvals || [];
     state.revisionPreviewApi = Boolean(bootstrap.capabilities?.revisionPreview);
     state.imageGroupsEnabled = Boolean(bootstrap.capabilities?.imageGroups);
@@ -1249,11 +1395,19 @@ async function start() {
     state.skillUrl = bootstrap.skill?.url || state.skillUrl;
     $('#downloadSkill').href = state.skillUrl;
     renderProjects(); renderBridge();
-    const previous = sessionStorage.getItem('studio-active-project');
+    state.scheduler = bootstrap.scheduler || { active: [], queued: [] };
+    renderScheduler();
+    const previous = state.project?.id || sessionStorage.getItem(workspaceStorageKey('active-project'));
     const id = state.projects.some(project => project.id === previous) ? previous : bootstrap.activeProjectId || state.projects[0]?.id;
     if (id) await selectProject(id);
-    else { showDialog('#newProjectDialog'); }
-    void subscribe();
+    else if (!$('#settingsDialog').open) showDialog('#newProjectDialog');
+    if (request === bootstrapRequest) { state.workspaceRefreshing = false; renderTask(); }
+}
+
+async function start() {
+  try {
+    await loadBootstrap();
+    if (!subscriptionStarted) { subscriptionStarted = true; void subscribe(); }
   } catch (error) {
     $('#viewportMount').innerHTML = `<div class="stage-placeholder"><span class="large-cube">◇</span><p>暂时无法打开工作空间</p><p>${escapeHtml(error.message)}</p><button class="subtle-button" id="retryBootstrap">重试连接</button></div>`;
     $('#retryBootstrap').onclick = start;

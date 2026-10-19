@@ -51,7 +51,7 @@ export function updateBridgeStatus(info, event) {
 /** Reconcile an interrupted process with durable model snapshots before accepting new tasks. */
 export function recoverTaskAfterRestart(project, at = new Date().toISOString()) {
   const task = project.task;
-  if (!['starting', 'running', 'stopping', 'validating'].includes(task?.status)) return task;
+  if (!['queued', 'starting', 'running', 'stopping', 'validating'].includes(task?.status)) return task;
   if (project.pendingRevisionId) {
     if (task.status === 'validating') return task;
     return {

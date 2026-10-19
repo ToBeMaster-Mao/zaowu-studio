@@ -82,3 +82,38 @@ test('elapsed time ticks while running and freezes on completion without negativ
   assert.equal(elapsedLabel('not-a-date', null), '');
   assert.equal(elapsedLabel(start, 'not-a-date'), '');
 });
+
+test('queued tasks reserve this project without covering the preview and can be cancelled', () => {
+  const task = { status: 'queued', intent: 'generate', provider: 'openai', queuePosition: 3 };
+  const queued = describeTask({ task });
+  assert.equal(queued.phase, 'queued');
+  assert.equal(queued.busy, true);
+  assert.equal(queued.overlay, false);
+  assert.equal(queued.canStop, true);
+  assert.match(queued.description, /第 3 位/);
+  assert.match(queued.description, /切换项目/);
+  const cancelling = describeTask({ task, stopping: true });
+  assert.equal(cancelling.phase, 'stopping');
+  assert.equal(cancelling.canStop, false);
+  assert.equal(cancelling.overlay, false);
+  assert.match(cancelling.title, /取消排队/);
+  const cancelled = describeTask({ task: { ...task, status: 'cancelled' }, stopping: true });
+  assert.equal(cancelled.busy, false);
+  assert.equal(cancelled.phase, 'stopped');
+  assert.equal(describeTask({ task: { ...task, status: 'running' } }).overlay, true);
+});
+
+test('queued connection loss keeps its known model visible and does not promise cancellation', () => {
+  const task = { status: 'queued', queuePosition: 1 };
+  const feedback = describeTask({ task, connected: false });
+  assert.equal(feedback.phase, 'disconnected');
+  assert.equal(feedback.busy, true);
+  assert.equal(feedback.canStop, false);
+  assert.equal(feedback.overlay, false);
+  assert.equal(describeTask({ task, pendingRevision: true }).phase, 'validating');
+  for (const queuePosition of [undefined, null, 0, -1, 1.5, 'bad']) {
+    const queued = describeTask({ task: { ...task, queuePosition } });
+    assert.equal(queued.phase, 'queued');
+    assert.doesNotMatch(queued.description, /第 .* 位/);
+  }
+});

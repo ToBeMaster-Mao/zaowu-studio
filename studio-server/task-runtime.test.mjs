@@ -87,5 +87,6 @@ test('restart preserves pending validations, ends missing runs, and leaves compl
   assert.equal(recoverTaskAfterRestart({ task: finished }), finished);
   assert.equal(recoverTaskAfterRestart({ task: { status: 'starting' } }).status, 'interrupted');
   assert.equal(recoverTaskAfterRestart({ task: { status: 'stopping' } }).status, 'interrupted');
+  assert.equal(recoverTaskAfterRestart({ task: { status: 'queued' } }).status, 'interrupted');
   assert.equal(recoverTaskAfterRestart({ task: null }), null);
 });

@@ -1,7 +1,7 @@
 {
   "name": "zaowu-studio",
   "version": "0.1.0",
-  "description": "Local Three.js modeling workspace connected to Codex CLI",
+  "description": "Local Three.js modeling workspace with Codex CLI and configurable model APIs",
   "private": true,
   "type": "module",
   "license": "MIT",

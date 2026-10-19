@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="/studio-web/display-settings.css">
   <link rel="stylesheet" href="/studio-web/topbar.css">
   <link rel="stylesheet" href="/studio-web/skill-install.css">
+  <link rel="stylesheet" href="/studio-web/settings.css">
   <link rel="icon" type="image/svg+xml" href="/studio-web/brand/favicon.svg?v=black-bg">
 </head>
 <body>
@@ -35,6 +36,7 @@
       </div>
       <div class="topbar-spacer"></div>
       <div class="header-tools">
+        <button id="settingsButton" class="settings-button" type="button" title="工作空间与模型服务设置" aria-label="工作空间与模型服务设置" aria-haspopup="dialog" aria-controls="settingsDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9m4 0h3M4 12h3m4 0h9M4 18h9m4 0h3"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="18" r="2"/></svg></button>
         <button id="connectButton" class="connection-button" type="button" title="管理 Codex 连接" aria-label="管理 Codex 连接" aria-haspopup="dialog" aria-controls="connectDialog"><svg class="connection-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3M13 15h4"/></svg><span class="connection-name">Codex</span><span class="status-dot" aria-hidden="true"></span><span id="connectionLabel">未连接</span></button>
         <button id="skillButton" class="header-skill-button" type="button" aria-label="获取造物 SKILL" title="获取造物 SKILL" aria-haspopup="dialog" aria-controls="skillDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg><span class="header-skill-label">造物 SKILL</span></button>
       </div>
@@ -59,7 +61,9 @@
           <label id="includeReferenceLabel" class="include-reference-label"><input id="includeProjectReferences" type="checkbox" checked>附带已选参考图 <span id="includedReferenceCount"></span></label>
           <input id="conversationImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden multiple>
           <textarea id="promptInput" rows="3" placeholder="描述想修改的地方…" aria-label="建模要求" aria-keyshortcuts="Control+Enter Meta+Enter"></textarea>
-          <div class="composer-controls"><div class="model-choice"><svg class="model-ai-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5c.9 5.4 2.1 6.6 7.5 7.5-5.4.9-6.6 2.1-7.5 7.5C9.1 13.1 7.9 11.9 2.5 11 7.9 10.1 9.1 8.9 10 3.5Z"/><path d="M19 2.5v5M16.5 5h5M19 16.5v4M17 18.5h4"/></svg><select id="modelSelect" aria-label="Codex 模型"><option value="">本地默认模型</option></select></div><button id="sendButton" type="submit" class="send-button" aria-label="发送建模要求" title="发送 · Ctrl + Enter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button><button id="stopButton" type="button" class="stop-button" hidden aria-label="停止当前任务">停止任务</button></div>
+          <div class="provider-choice"><label for="providerSelect">模型服务</label><select id="providerSelect" aria-label="本轮模型服务"><option value="codex">Codex CLI</option><option value="openai">OpenAI</option><option value="deepseek">DeepSeek</option><option value="gemini">Gemini</option><option value="grok">Grok (xAI)</option></select></div>
+          <div class="composer-controls"><div class="model-choice"><svg class="model-ai-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3.5c.9 5.4 2.1 6.6 7.5 7.5-5.4.9-6.6 2.1-7.5 7.5C9.1 13.1 7.9 11.9 2.5 11 7.9 10.1 9.1 8.9 10 3.5Z"/><path d="M19 2.5v5M16.5 5h5M19 16.5v4M17 18.5h4"/></svg><select id="modelSelect" aria-label="Codex 模型"><option value="">本地默认模型</option></select><input id="apiModelInput" class="api-model-input" type="text" list="taskModels" autocomplete="off" spellcheck="false" placeholder="选择或填写模型 ID" aria-label="本轮 API 模型" hidden><datalist id="taskModels"></datalist></div><button id="sendButton" type="submit" class="send-button" aria-label="发送建模要求" title="发送 · Ctrl + Enter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button><button id="stopButton" type="button" class="stop-button" hidden aria-label="停止当前任务">停止任务</button></div>
+          <p id="providerHint" class="provider-hint"></p><button id="schedulerStatus" type="button" aria-haspopup="dialog" aria-controls="settingsDialog" hidden></button>
         </form>
       </aside>
 
@@ -109,6 +113,22 @@
   </div>
 
   <dialog id="connectDialog" class="modal"><div class="modal-header"><h2>连接 Codex</h2><button class="icon-button" data-close-dialog aria-label="关闭连接窗口">×</button></div><div id="connectDetails"></div><div class="modal-actions"><button id="retryConnect" class="primary-button">连接本地 CLI</button></div></dialog>
+  <dialog id="settingsDialog" class="modal settings-modal" aria-labelledby="settingsTitle" aria-describedby="settingsIntro">
+    <form id="settingsForm">
+      <div class="modal-header"><h2 id="settingsTitle">工作空间与模型服务</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭设置">×</button></div>
+      <p id="settingsIntro" class="settings-hint">选择工程存放目录、并发数量和本轮建模使用的模型服务。</p>
+      <fieldset><legend>工作空间</legend>
+        <label class="field-label" for="settingsWorkspace">项目根目录（本机绝对路径）</label><input id="settingsWorkspace" class="text-input" type="text" list="workspaceHistory" autocomplete="off" spellcheck="false" required><datalist id="workspaceHistory"></datalist>
+        <p class="settings-hint">切换后打开目标目录中的项目，原有工程仍留在原目录。任务运行、排队或等待预览校验时，请先完成或停止任务。</p>
+        <div class="settings-columns"><div><label class="field-label" for="settingsCodexConcurrency">Codex 同时运行任务数</label><input id="settingsCodexConcurrency" class="text-input" type="number" min="1" max="8" step="1" required></div><div><label class="field-label" for="settingsApiConcurrency">API 同时运行任务数</label><input id="settingsApiConcurrency" class="text-input" type="number" min="1" max="8" step="1" required></div></div>
+        <p class="settings-hint">不同项目可以同时提交任务；超过各自的并发上限后自动排队。同一项目一次处理一项任务。</p>
+        <label class="field-label" for="settingsDefaultProvider">默认模型服务</label><select id="settingsDefaultProvider" class="text-input"></select>
+      </fieldset>
+      <fieldset><legend>API 模型服务</legend><p class="settings-hint">留空 API Key 会保留已保存的密钥。可以先填地址和密钥获取模型、测试连接，再保存。测试仅查询模型列表，不发起生成。</p><div id="providerSettings"></div></fieldset>
+      <section id="settingsQueue" aria-labelledby="settingsQueueTitle"><h3 id="settingsQueueTitle">运行与排队</h3><div id="settingsTaskList" aria-live="polite"></div></section>
+      <div class="settings-save-actions"><p id="settingsStatus" class="settings-status" role="status" aria-live="polite"></p><div class="modal-actions"><button type="button" class="subtle-button" data-close-dialog>关闭</button><button id="saveSettings" class="primary-button" type="submit">保存设置</button></div></div>
+    </form>
+  </dialog>
   <dialog id="newProjectDialog" class="modal"><form id="newProjectForm"><div class="modal-header"><h2>新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭新建项目">×</button></div><label class="field-label" for="projectNameInput">项目名称</label><input id="projectNameInput" class="text-input" placeholder="例如：建筑模型" maxlength="80" required><label class="field-label" for="templateSelect">初始模型</label><select id="templateSelect" class="text-input"><option value="empty">空白项目</option><option value="airliner">客机示例</option></select><div class="modal-actions"><button type="submit" class="primary-button">创建项目</button></div></form></dialog>
   <dialog id="skillDialog" class="modal skill-install-modal" aria-labelledby="skillDialogTitle" aria-describedby="skillInstallIntro">
     <div class="modal-header"><div class="skill-install-heading"><span class="skill-install-emblem"><img src="/studio-web/brand/logo-mark.svg" alt="" width="31" height="31"></span><div><h2 id="skillDialogTitle">安装造物 SKILL</h2><p>Codex · Claude Code · 其他 Agent</p></div></div><button type="button" class="icon-button" data-close-dialog aria-label="关闭 Skill 窗口">×</button></div>

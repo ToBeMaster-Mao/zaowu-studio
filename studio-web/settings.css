@@ -1,0 +1,44 @@
+.topbar .settings-button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 8px; flex: none; border: 1px solid #ffffff12; border-radius: 7px; color: #b9c6ce; background: #22282c; }
+.settings-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.settings-modal { width: min(760px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 26px; overflow: auto; scrollbar-width: thin; scrollbar-color: #465058 transparent; }
+.settings-modal .modal-header { margin-bottom: 12px; }
+.settings-modal fieldset { min-width: 0; padding: 0; margin: 0; border: 0; }
+.settings-modal fieldset + fieldset { margin-top: 26px; padding-top: 22px; border-top: 1px solid #ffffff10; }
+.settings-modal legend, .settings-modal h3 { color: #d9e4df; font-size: 15px; font-weight: 600; margin-bottom: 8px; padding: 0; }
+.settings-modal .field-label { margin-top: 14px; font-size: 13px; }
+.settings-modal .text-input { min-width: 0; height: 42px; font-size: 13px; }
+.settings-hint { margin: 8px 0 0; color: #93a2ab; font-size: 12px; line-height: 1.8; }
+.settings-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.settings-checkbox { display: flex; align-items: center; gap: 8px; margin: 13px 0 0; color: #c3cdd4; font-size: 13px; line-height: 1.6; }
+.settings-checkbox input { width: 15px; height: 15px; margin: 0; accent-color: #d3f28a; }
+.provider-settings { margin-top: 12px; border: 1px solid #ffffff13; border-radius: 9px; background: #20272b; }
+.provider-settings summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; padding: 14px; list-style: none; }
+.provider-settings summary::-webkit-details-marker { display: none; }
+.provider-settings summary strong::before { content: '›'; display: inline-block; margin-right: 10px; color: #b7ce92; }
+.provider-settings[open] summary strong::before { transform: rotate(90deg); }
+.provider-settings summary strong { font-size: 14px; }
+.provider-settings summary:focus-visible { outline: 2px solid #d3f28a; outline-offset: -3px; border-radius: 8px; }
+.settings-key-state { color: #9caf95; font-size: 12px; }
+.provider-settings-body { padding: 0 15px 16px; }
+.provider-settings-body > .subtle-button { margin-top: 15px; }
+.settings-model-row { display: flex; align-items: center; gap: 8px; }
+.settings-model-row input { flex: 1; }
+.settings-modal .subtle-button { padding: 9px 12px; font-size: 13px; }
+.settings-status { margin-top: 10px; color: #cee5aa; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-wrap; }
+.settings-status:empty { display: none; }
+.settings-status[data-error="true"] { color: #edb3a0; }
+.settings-save-actions { position: sticky; bottom: -26px; margin: 22px -2px -2px; padding: 15px 2px 2px; border-top: 1px solid #ffffff12; background: #1d2228; }
+#settingsQueue { margin-top: 24px; padding-top: 18px; border-top: 1px solid #ffffff10; }
+#settingsTaskList { color: #8fa199; font-size: 13px; line-height: 1.8; }
+.settings-task-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; }
+.settings-task-row button { min-width: 0; padding: 4px 0; text-align: left; color: #d3e4bf; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
+.settings-task-row span { flex: none; color: #9eaca5; font-size: 12px; }
+#leftPanel .provider-choice { display: flex; align-items: center; gap: 9px; margin: 10px 0 7px; color: #9eacb4; font-size: 12px; }
+#leftPanel .provider-choice .studio-select-trigger { flex: 1; min-width: 0; min-height: 32px; padding: 5px 8px; font-size: 13px; border: 1px solid #ffffff12; background: #242d32; }
+#leftPanel .api-model-input { width: 100%; min-width: 0; height: 38px; padding: 7px 9px 7px 0; border: 0; background: transparent; color: #c4cdd5; font-size: 13px; }
+#leftPanel .api-model-input:focus-visible { outline-offset: -2px; }
+#leftPanel .provider-hint { margin: 5px 0 0; color: #97a69c; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+#leftPanel .provider-hint:empty { display: none; }
+#schedulerStatus { display: block; width: 100%; margin-top: 7px; padding: 4px 0; color: #a6b994; text-align: left; font-size: 12px; line-height: 1.6; }
+.task-card[data-phase="queued"] .task-card-bottom { display: flex; }
+@media (max-width: 540px) { .settings-modal { padding: 20px; } .settings-columns { grid-template-columns: 1fr; gap: 0; } .settings-model-row { align-items: stretch; flex-direction: column; } .settings-model-row input { flex: none; } .settings-save-actions { bottom: -20px; } .settings-task-row { align-items: flex-start; } }

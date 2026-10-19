@@ -35,12 +35,21 @@ export function describeTask({
 
   if (active && !connected) {
     return result('disconnected', '连接已中断', '暂时无法获取任务状态；任务是否结束尚未确认，请重新连接。', {
-      busy: true, overlay: true, tone: 'warning',
+      busy: true, overlay: status !== 'queued', tone: 'warning',
     });
   }
 
+  if (status === 'queued') {
+    if (stopping) return result('stopping', '正在取消排队', '取消请求已发送，等待服务确认。', { busy: true, tone: 'warning' });
+    const position = Number(task.queuePosition);
+    return result('queued', '任务已排队', Number.isInteger(position) && position > 0
+      ? `当前排在第 ${position} 位，空出运行名额后自动开始。可以切换项目继续工作，或取消排队。`
+      : '空出运行名额后自动开始。可以切换项目继续工作，或取消排队。',
+    { busy: true, canStop: true, tone: 'neutral' });
+  }
+
   if (status === 'starting') {
-    return result('submitting', generating ? '正在准备建模' : '正在准备处理', '本地 Agent 正在启动本次任务，请稍候。', {
+    return result('submitting', generating ? '正在准备建模' : '正在准备处理', '正在启动本次模型任务，请稍候。', {
       busy: true, overlay: true, tone: 'active',
     });
   }
@@ -61,7 +70,7 @@ export function describeTask({
     return result(generating ? 'generating' : 'working', generating ? '正在建模' : '正在处理',
       typeof activity === 'string' && activity.trim() ? activity.trim() : generating
         ? '正在根据参考图创建模型，完成后会自动加载预览。'
-        : 'Agent 正在处理你的要求，回复和进展会显示在对话中。',
+        : '正在处理你的要求，回复和进展会显示在对话中。',
       { busy: true, overlay: true, canStop: true, tone: 'active' });
   }
 

@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { IMAGE_LIMITS } from './task-contract.mjs';
 
 const SAFE_ID = /^[a-zA-Z0-9_-]{1,100}$/;
@@ -71,8 +72,20 @@ export class ProjectStore {
 
   async _atomic(file, value) {
     const temporary = `${file}.${randomUUID()}.tmp`;
-    await fs.writeFile(temporary, value, { flag: 'wx' });
-    await fs.rename(temporary, file);
+    try {
+      await fs.writeFile(temporary, value, { flag: 'wx' });
+      for (let attempt = 0; ; attempt++) {
+        try { await fs.rename(temporary, file); break; }
+        catch (error) {
+          // A concurrent reader or scanner can briefly prevent replacement on
+          // Windows. Retry only the atomic rename, never the project operation.
+          if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code) || attempt >= 5) throw error;
+          await delay(25 * 2 ** attempt);
+        }
+      }
+    } finally {
+      await fs.unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; });
+    }
   }
 
   async _read(id) {
